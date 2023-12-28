@@ -16,8 +16,6 @@ Transported : target
 use std::fs::File;
 use ndarray::prelude::*;
 use polars::prelude::*;
-use polars_core::prelude::*;
-use polars_io::prelude::*;
 use plotters::prelude::*;
 
 use std::str;

@@ -18,8 +18,5 @@ ndarray = "0.15.6"
 smartcore="0.3.2"
 plotters = "0.3.5"
 polars = { version = "0.34.2", features = ["ndarray","to_dummies","lazy","describe"] }
-polars-core = "0.34.2"
-polars-io = "0.34.2"
-tokio-util = "0.7.10"
 linfa-nn = "0.7.0"
 chrono = "0.4.31"

@@ -1,7 +1,5 @@
 use ndarray::prelude::*;
 use polars::prelude::*;
-use polars_core::prelude::*;
-use polars_io::prelude::*;
 use plotters::prelude::*;
 const OUT_FILE_NAME: &str = "./src/kaggle/house_price/house_price.png";
 

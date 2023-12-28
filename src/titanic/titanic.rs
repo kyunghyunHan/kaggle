@@ -1,8 +1,7 @@
 
-use ndarray::{Axis, iter::Axes,concatenate,stack};
+use ndarray::prelude::*;
 use polars::prelude::*;
-use polars_core::prelude::*;
-use polars_io::prelude::*;
+
 use std::fs::File;
 use smartcore::neighbors::knn_classifier::*;
 use smartcore::linalg::basic::matrix::DenseMatrix;
@@ -93,8 +92,7 @@ let embarked_test_dummies: DataFrame= test_df.select(["Embarked"]).unwrap().to_d
 let mut train_df: DataFrame = train_df.hstack(embarked_train_dummies.get_columns()).unwrap().drop(&"Embarked").unwrap();
 let mut test_df: DataFrame = test_df.hstack(embarked_test_dummies.get_columns()).unwrap().drop(&"Embarked").unwrap();
 
-
-/*===================processing========================= */
+/*data 변환 */
 let y_train= train_df.column("Survived").unwrap();
 let x_train= train_df.drop("Survived").unwrap();
 let x_test= test_df.drop("PassengerId").unwrap().clone();
@@ -120,70 +118,33 @@ for row in test_data.outer_iter() {
 let x_test: DenseMatrix<f64> = DenseMatrix::from_2d_vec(&x_test);
 //result_data
 
-let aa= result_df.column(&"Survived").unwrap();
+let result_df: &Series= result_df.column(&"Survived").unwrap();
 
-let result_train: Vec<i64> = aa.i64().unwrap().into_no_null_iter().collect();
+let result_train: Vec<i64> = result_df.i64().unwrap().into_no_null_iter().collect();
 let result_train:Vec<i32>= result_train.iter().map(|x|*x as i32).collect();
 
+/*===================processing========================= */
+/*===================model test======================== */
+/*knn */
 let knn: KNNClassifier<f64, i32, DenseMatrix<f64>, Vec<i32>, distance::euclidian::Euclidian<f64>>= KNNClassifier::fit(&x_train, &y_train, KNNClassifierParameters::default().with_k(3)).unwrap();
-// let (train_input, test_input, tarin_target, test_target) = train_test_split(&x_train, &y_train, 0.2,true,None);
-
 let y_pred: Vec<i32> = knn.predict(&x_test).unwrap();
-// roc_auc_score(x_train, y_pred);
 let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&result_train,&y_pred);
-
 println!("{:?}",acc);
-
-// }
-
-
-// let mut test_data: Vec<Vec<_>> = Vec::new();
-// for row in x_test.outer_iter() {
-//     let row_vec: Vec<_> = row.iter().cloned().collect();
-//     test_data.push(row_vec);
-// }
-// let x_train: DenseMatrix<f64> = DenseMatrix::from_2d_vec(&data);
-// println!("{}",x_train);
-// let x_test: DenseMatrix<f64>= DenseMatrix::from_2d_vec(&test_data);
-// let y_train: Vec<i64> = y_train.i64().unwrap().into_no_null_iter().collect();
-// let y_train= y_train.iter().map(|x|*x as i32).collect();
-// let (train_input, test_input, tarin_target, test_target) = train_test_split(&x_train, &y_train, 0.2,true,None);
-    
-/*데이터 나누기 */
-
-/*알고리즘 적용 
-target= vec<i32>
-input= denseMartrix
-*/
-// let knn: KNNClassifier<f64, i32, DenseMatrix<f64>, Vec<i32>, distance::euclidian::Euclidian<f64>>= KNNClassifier::fit(&train_input, &tarin_target, KNNClassifierParameters::default().with_k(4)).unwrap();
-
-// let y_pred: Vec<i32> = knn.predict(&test_input).unwrap();
-
-// let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&test_target, &y_pred);
-// println!("{:?}",acc);
-
-
 
 // /*로지스틱 */
 // let logreg= LogisticRegression::fit(&train_input, &tarin_target, Default::default()).unwrap();
 // let y_pred: Vec<i32> = logreg.predict(&test_input).unwrap();
 // let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&test_target, &y_pred);
 // println!("{:?}",acc);
-
-// // /*SVC */
-// // let y_pred =  SVC::fit(&x_train, &y_train, &SVCParameters::default().with_c(10.0))
-// //     .and_then(|svm| svm.predict(&x_test))
-// //     .unwrap();
-// // println!("AUC SVM: {}", roc_auc_score(&test_target, &y_pred));
-
 // /*랜덤포레스트 */
 let random_forest= RandomForestClassifier::fit(&x_train, &y_train,RandomForestClassifierParameters::default().with_n_trees(100)).unwrap();
 let y_pred: Vec<i32> = random_forest.predict(&x_test).unwrap();
 let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&result_train,&y_pred);
 println!("{:?}",acc);
+/*===================model test======================== */
+/*===================제출용 파일========================= */
 
-/*제출용 파일 */
-
+//random forest 가 가장 빠르기 때문에
 let random_forest= RandomForestClassifier::fit(&x_train, &y_train,RandomForestClassifierParameters::default().with_n_trees(100)).unwrap();
 let y_pred: Vec<i32> = random_forest.predict(&x_test).unwrap();
 
@@ -199,5 +160,6 @@ CsvWriter::new(&mut output_file)
     .has_header(true)
     .finish(&mut df)
     .unwrap();
+/*===================제출용 파일========================= */
 
 }
