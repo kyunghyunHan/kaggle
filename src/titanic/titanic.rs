@@ -13,10 +13,10 @@ use polars::prelude::{CsvWriter, DataFrame, NamedFrom, SerWriter, Series};
 use smartcore::svm::svc::{SVC,SVCParameters};
 use smartcore::ensemble::random_forest_classifier::{RandomForestClassifier,RandomForestClassifierParameters};
 pub fn main(){
-    let  train_df: DataFrame = CsvReader::from_path("./datasets/titanic_beginner/train.csv")
+   let train_df: DataFrame = CsvReader::from_path("./datasets/titanic/train.csv")
     .unwrap()
-    .finish().unwrap().drop_many(&["PassengerId", "Name", "Ticket"]);
-   let test_df = CsvReader::from_path("./datasets/titanic_beginner/test.csv")
+    .finish().unwrap().drop_many(&[ "Name", "Ticket"]);
+   let test_df = CsvReader::from_path("./datasets/titanic/test.csv")
    .unwrap()
    .finish().unwrap().drop_many(&["Name", "Ticket"]);
    //데이터 미리보기
@@ -163,12 +163,12 @@ println!("{}",x_train);
 let x_test: DenseMatrix<f64>= DenseMatrix::from_2d_vec(&test_data);
 let y_train: Vec<i64> = y_train.i64().unwrap().into_no_null_iter().collect();
 let y_train= y_train.iter().map(|x|*x as i32).collect();
-let (train_input, test_input, tarin_target, test_target) = train_test_split(&x_train, &y_train, 0.2,true,None);
+let (train_input, test_input, tarin_target, test_target) = train_test_split(&x_train, &y_train, 0.47,true,Some(2));
     
 /*데이터 나누기 */
 
 /*알고리즘 적용 */
-let knn: KNNClassifier<f64, i32, DenseMatrix<f64>, Vec<i32>, distance::euclidian::Euclidian<f64>>= KNNClassifier::fit(&train_input, &tarin_target, KNNClassifierParameters::default().with_k(3)).unwrap();
+let knn: KNNClassifier<f64, i32, DenseMatrix<f64>, Vec<i32>, distance::euclidian::Euclidian<f64>>= KNNClassifier::fit(&train_input, &tarin_target, KNNClassifierParameters::default().with_k(4)).unwrap();
 
 let y_pred: Vec<i32> = knn.predict(&test_input).unwrap();
 
@@ -193,7 +193,7 @@ println!("{:?}",acc);
 let random_forest= RandomForestClassifier::fit(&train_input, &tarin_target, RandomForestClassifierParameters::default().with_n_trees(100)).unwrap();
 let y_pred: Vec<i32> = random_forest.predict(&test_input).unwrap();
 let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&test_target, &y_pred);
-println!("{:?}",test_input);
+println!("{:?}",acc);
 
 /*제출용 파일 */
 
@@ -201,17 +201,16 @@ let random_forest= RandomForestClassifier::fit(&train_input, &tarin_target, Rand
 let random_forest_y_pred: Vec<i32> = random_forest.predict(&test_input).unwrap();
 
 let survived_series = Series::new("Survived", random_forest_y_pred.into_iter().collect::<Vec<i32>>());
-let passenger_id_series = train_df.column("PassengerId").unwrap().clone();
+let passenger_id_series = test_df.column("PassengerId").unwrap().clone();
 
-let df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
+let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
 
-println!("{:?}",df);
 
-let mut output_file: File = File::create("./datasets/titanic_beginner/out.csv").unwrap();
+let mut output_file: File = File::create("./datasets/titanic/out.csv").unwrap();
 
 CsvWriter::new(&mut output_file)
     .has_header(true)
-    .finish(&mut train_df)
+    .finish(&mut df)
     .unwrap();
 
 }

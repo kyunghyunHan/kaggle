@@ -1,5 +1,6 @@
 mod house_price;
-
+mod spaceship_titanic;
+mod titanic;
 fn main() {
-    println!("Hello, world!");
+    titanic::titanic::main();
 }
