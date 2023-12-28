@@ -29,7 +29,7 @@ pub fn main(){
    println!("데이터 정보 확인:{:?}",train_df.schema());
   
  
- 
+   
 /*===================processing========================= */
 /*Pclass */
 
