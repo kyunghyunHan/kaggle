@@ -38,20 +38,23 @@ pub fn main(){
 
     println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
     
+    /*===================data 불러오기========================= */
+    /*===================히스토그램 그리기========================= */
     let root = BitMapBackend::new("./src/spaceship_titanic/histogram.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
-    let mut chart_builder = ChartBuilder::on(&root);
+    let drawing_areas = root.split_evenly((2, 3));
+
+    for (drawing_area, idx) in drawing_areas.iter().zip(1..) {
+        let mut chart_builder = ChartBuilder::on(&drawing_area);
 
     chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
-   let mut chart_context = chart_builder.build_cartesian_2d((1..10).into_segmented(), 0..9).unwrap();
-   chart_context.configure_mesh().draw().unwrap();
+    let mut chart_context = chart_builder.build_cartesian_2d((1..10).into_segmented(), 0..9).unwrap();
+    chart_context.configure_mesh().draw().unwrap();
     chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
     .data((0..10).map(|x| (x, x)))).unwrap();
+    }
+    /*===================히스토그램 그리기========================= */
 
-    // 히스토그램을 그립니다.
-    // root.draw(&chart_builder)?;
-
-    /*===================data 불러오기========================= */
     /*===================processing========================= */
     
     
