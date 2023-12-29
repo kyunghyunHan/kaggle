@@ -14,7 +14,7 @@ use smartcore::ensemble::random_forest_classifier::{RandomForestClassifier,Rando
 
 
 pub fn main(){
-   let mut train_df: DataFrame = CsvReader::from_path("./datasets/titanic/train.csv")
+   let train_df: DataFrame = CsvReader::from_path("./datasets/titanic/train.csv")
     .unwrap()
     .finish().unwrap().drop_many(&["PassengerId","Name", "Ticket"]);
    let test_df = CsvReader::from_path("./datasets/titanic/test.csv")

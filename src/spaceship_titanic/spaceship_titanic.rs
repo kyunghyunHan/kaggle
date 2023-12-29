@@ -18,52 +18,45 @@ use ndarray::prelude::*;
 use polars::prelude::*;
 use plotters::prelude::*;
 
-use std::str;
 pub fn main(){
-    /*데이터불러오기 */
-    let mut train_df: DataFrame = CsvReader::from_path("./datasets/spaceship_titanic/train.csv")
-    .unwrap()
+    /*===================data 불러오기========================= */
+
+    let  train_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/train.csv").unwrap()
     .finish().unwrap();
 
-    let  test_df: DataFrame = CsvReader::from_path("./datasets/spaceship_titanic/test.csv")
-    .unwrap()
+    let  test_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/test.csv").unwrap()
     .finish().unwrap();
 
 
     println!("데이터 미리보기:{}",train_df.head(None));
     println!("데이터 정보 확인:{:?}",train_df.schema());
+    println!("데이터 미리보기:{}",test_df.head(None));
+    println!("데이터 정보 확인:{:?}",test_df.schema());
 
-    /* 결측치 확인
-    결측치가 5프로 내외
-    */
-    println!("{}",train_df.null_count());
+    println!("결측치 확인:{:?}",train_df.null_count());
+    println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
+
+    println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
     
-    /*수치형 데이터 확인*/
-    println!("{:?}",train_df.describe(None));
+    let root = BitMapBackend::new("./src/spaceship_titanic/histogram.png", (800, 600)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+    let mut chart_builder = ChartBuilder::on(&root);
 
-   let a=  train_df.column("PassengerId").unwrap();
+    chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
+   let mut chart_context = chart_builder.build_cartesian_2d((1..10).into_segmented(), 0..9).unwrap();
+   chart_context.configure_mesh().draw().unwrap();
+    chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
+    .data((0..10).map(|x| (x, x)))).unwrap();
 
-   let y_train: Vec<u32> = a.u32().unwrap().into_no_null_iter().collect();
-   let y_train:Vec<i32>= y_train.iter().map(|x|*x as i32).collect();
- 
+    // 히스토그램을 그립니다.
+    // root.draw(&chart_builder)?;
 
-    let root_area = BitMapBackend::new("2.13.png", (600, 400))
-    .into_drawing_area();
-    root_area.fill(&WHITE).unwrap();
-
-    let mut ctx = ChartBuilder::on(&root_area)
-        .set_label_area_size(LabelAreaPosition::Left, 40)
-        .set_label_area_size(LabelAreaPosition::Bottom, 40)
-        .caption("Prime Distribution", ("sans-serif", 40))
-        .build_cartesian_2d([0, 20,40,60,80].into_segmented(), 0..2000)
-        .unwrap();
-
-    ctx.configure_mesh().draw().unwrap();
+    /*===================data 불러오기========================= */
+    /*===================processing========================= */
+    
+    
 
 
-    ctx.draw_series(
-        Histogram::vertical(&ctx)
-        .margin(100)
-        .data(y_train.iter().map(|x| (x, 1)))
-    ).unwrap();
+    /*===================processing========================= */
+
 }
