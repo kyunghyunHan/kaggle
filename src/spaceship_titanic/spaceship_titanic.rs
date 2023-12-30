@@ -15,13 +15,13 @@ Transported : target
 */
 use std::fs::File;
 use ndarray::prelude::*;
-use polars::prelude::*;
+use polars::{prelude::*, lazy::dsl::col};
 use plotters::prelude::*;
 
 pub fn main(){
     /*===================data 불러오기========================= */
 
-    let  train_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/train.csv").unwrap()
+    let  mut train_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/train.csv").unwrap()
     .finish().unwrap();
 
     let  test_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/test.csv").unwrap()
@@ -56,7 +56,22 @@ pub fn main(){
     /*===================히스토그램 그리기========================= */
 
     /*===================processing========================= */
-    
+//   train_df.with_column(  train_df.column("CryoSleep").unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
+
+//   let train_df= train_df.clone()
+//       .lazy()
+//       .select([
+//           col("CryoSleep").cast(DataType::Float64),
+//         //   col("floats").cast(DataType::Boolean),
+//       ])
+//       .collect().unwrap();
+  let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("CryoSleep").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
+
+   println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
+   println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
+   
+  println!("{:?}",train_df.select(["CryoSleep"]).unwrap().null_count());
+  println!("{}",train_df.null_count())
     
 
 
