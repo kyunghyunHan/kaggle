@@ -88,7 +88,7 @@ let train_df = train_df
     ])
     .collect().unwrap();
 let train_df= train_df.clone().lazy().with_columns(
-[col("Cabin").cast(DataType::Utf8)]
+[col("Cabin")]
 ).collect().unwrap();
 // let cab= train_df.clone()
 // .lazy().with_column(col("Cabin"))
