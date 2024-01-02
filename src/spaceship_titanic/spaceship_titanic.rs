@@ -56,14 +56,12 @@ pub fn main(){
     ("ShoppingMall", &shopping_mall_data),
     ("Spa", &spa_data),
     ("VRDeck", &vr_deck_data)];
-    let drawing_areas = root.split_evenly((2, 3));
+    let drawing_areas = root.split_evenly((3, 2));
     for (drawing_area, idx) in drawing_areas.iter().zip(1..) {
         let mut chart_builder = ChartBuilder::on(&drawing_area);
     chart_builder.margin(5).set_left_and_bottom_label_area_size(20).caption(format!("{}",data[idx as usize -1].0), ("sans-serif", 40));
-
     let mut chart_context = chart_builder.build_cartesian_2d((0u32..80u32).step(1).into_segmented(), (0f64..2100f64).step(100f64)).unwrap();
     chart_context.configure_mesh().draw().unwrap();
-    println!("{:?}",age_data);
     chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
     .data(data[idx -1].1.iter().map(|v | (*v as u32,1f64 )))
    ).unwrap();
@@ -71,16 +69,30 @@ pub fn main(){
     /*===================히스토그램 그리기========================= */
 
     /*===================processing========================= */
-   let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("CryoSleep").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
-   println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
-   println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
-   println!("{}",train_df.null_count());
-    
-     /*Vip */
-     println!("{}",train_df.column("VIP").unwrap().null_count());
-    let vip_serice= train_df.select(["VIP"]).unwrap();
-    println!("{}",train_df.column("Age").unwrap());
-    println!("{:?}",train_df.select(["Age"]).unwrap().describe(Some(&[0f64])));
+//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("CryoSleep").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
+//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("VIP").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
+//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("Cabin").unwrap().fill_null(FillNullStrategy::Forward(Some(0))).unwrap()).unwrap();
+//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("HomePlanet").unwrap().fill_null(FillNullStrategy::Forward(Some(0))).unwrap()).unwrap();
+//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("HomePlanet").unwrap().fill_null(FillNullStrategy::Forward(Some(0))).unwrap()).unwrap();
+//    let train_df= train_df.with_column(column)
+let train_df = train_df
+    .clone()
+    .lazy()
+    .with_columns([
+        col("CryoSleep").cast(DataType::Float64).fill_null(0),
+        col("VIP").cast(DataType::Float64).fill_null(0),
+        col("Cabin").fill_null(lit("G/734/S")),
+        col("HomePlanet").fill_null(lit("Eath")),
+        col("Destination").fill_null(lit("TRAPPIST-1e")),
+        col("ShoppingMall").fill_null(col("ShoppingMall").median()),
+        col("VRDeck").fill_null(col("VRDeck").median()),
+        col("FoodCourt").fill_null(col("FoodCourt").median()),
+        col("Spa").fill_null(col("Spa").median()),
+        col("RoomService").fill_null(col("RoomService").median()),
+        col("Age").fill_null(col("Age").median()),
+    ])
+    .collect().unwrap();
+println!("{}",train_df.null_count());
 
     /*===================processing========================= */
    
