@@ -56,25 +56,28 @@ pub fn main(){
     /*===================히스토그램 그리기========================= */
 
     /*===================processing========================= */
-//   train_df.with_column(  train_df.column("CryoSleep").unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
-
-//   let train_df= train_df.clone()
-//       .lazy()
-//       .select([
-//           col("CryoSleep").cast(DataType::Float64),
-//         //   col("floats").cast(DataType::Boolean),
-//       ])
-//       .collect().unwrap();
-  let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("CryoSleep").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
-
+   let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("CryoSleep").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
    println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
    println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
-   
-  println!("{:?}",train_df.select(["CryoSleep"]).unwrap().null_count());
-  println!("{}",train_df.null_count())
+   println!("{}",train_df.null_count());
     
+     /*Vip */
+     println!("{}",train_df.column("VIP").unwrap().null_count());
+    let vip_serice= train_df.select(["VIP"]).unwrap();
+     vip_serice.to_ndarray(ordering)
+    
+    //  let root = BitMapBackend::new("./src/spaceship_titanic/vip.png", (800, 600)).into_drawing_area();
+    //  root.fill(&WHITE).unwrap();
+    //  let mut chart_builder = ChartBuilder::on(&root);
+    //  chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
 
-
+    //  let mut chart_context = chart_builder.build_cartesian_2d((1..10).into_segmented(), 0..9).unwrap();
+    //  chart_context.configure_mesh().x_desc("x").draw().unwrap();
+    //  chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
+    //  .data((1..20).map(|x| (x, x)))
+    // ).unwrap();
     /*===================processing========================= */
+   
+
     /*===================result========================= */
 }
