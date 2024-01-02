@@ -69,12 +69,7 @@ pub fn main(){
     /*===================히스토그램 그리기========================= */
 
     /*===================processing========================= */
-//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("CryoSleep").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
-//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("VIP").unwrap().cast(&DataType::Float64).unwrap().fill_null(FillNullStrategy::Zero).unwrap()).unwrap();
-//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("Cabin").unwrap().fill_null(FillNullStrategy::Forward(Some(0))).unwrap()).unwrap();
-//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("HomePlanet").unwrap().fill_null(FillNullStrategy::Forward(Some(0))).unwrap()).unwrap();
-//    let  train_df:&mut DataFrame= train_df.with_column(  train_df.column("HomePlanet").unwrap().fill_null(FillNullStrategy::Forward(Some(0))).unwrap()).unwrap();
-//    let train_df= train_df.with_column(column)
+
 let train_df = train_df
     .clone()
     .lazy()
@@ -92,8 +87,11 @@ let train_df = train_df
         col("Age").fill_null(col("Age").median()),
     ])
     .collect().unwrap();
-println!("{}",train_df.null_count());
-
+let train_df= train_df.clone().lazy().with_columns(
+[col("Cabin").cast(DataType::Utf8)]
+).collect().unwrap();
+// let cab= train_df.clone()
+// .lazy().with_column(col("Cabin"))
     /*===================processing========================= */
    
 

@@ -157,7 +157,7 @@ let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series
 let mut output_file: File = File::create("./datasets/titanic/out.csv").unwrap();
 
 CsvWriter::new(&mut output_file)
-    .has_header(true)
+    // .has_header(true)
     .finish(&mut df)
     .unwrap();
 /*===================제출용 파일========================= */
