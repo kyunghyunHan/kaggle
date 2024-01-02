@@ -4,6 +4,7 @@
 
 PassengerId :PassengerId
 HomePlanet- 승객이 출발한 행성, 일반적으로 영주권이 있는 행성입니다.
+
 CryoSleep- 승객이 항해 기간 동안 애니메이션을 정지하도록 선택했는지 여부를 나타냅니다. 냉동 수면 중인 승객은 객실에 갇혀 있습니다.
 Cabin- 승객이 머무르는 객실 번호. Port 또는 Starboarddeck/num/side 의 형식 을 취side 합니다 .PS
 Destination- 승객이 내릴 행성.
@@ -37,21 +38,35 @@ pub fn main(){
     println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
 
     println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
-    
+    let age_data:Vec<f64>= train_df.column("Age").unwrap().f64().unwrap().into_no_null_iter().collect();
+    let room_service_data:Vec<f64>= train_df.column("RoomService").unwrap().f64().unwrap().into_no_null_iter().collect();
+    let food_court_data:Vec<f64>= train_df.column("FoodCourt").unwrap().f64().unwrap().into_no_null_iter().collect();
+    let shopping_mall_data:Vec<f64>= train_df.column("ShoppingMall").unwrap().f64().unwrap().into_no_null_iter().collect();
+    let spa_data:Vec<f64>= train_df.column("Spa").unwrap().f64().unwrap().into_no_null_iter().collect();
+    let vr_deck_data:Vec<f64>= train_df.column("VRDeck").unwrap().f64().unwrap().into_no_null_iter().collect();
+
     /*===================data 불러오기========================= */
     /*===================히스토그램 그리기========================= */
     let root = BitMapBackend::new("./src/spaceship_titanic/histogram.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
+    let data= [ 
+     ("Age", &age_data),
+    ("RoomService", &room_service_data),
+    ("FoodCourt", &food_court_data),
+    ("ShoppingMall", &shopping_mall_data),
+    ("Spa", &spa_data),
+    ("VRDeck", &vr_deck_data)];
     let drawing_areas = root.split_evenly((2, 3));
-
     for (drawing_area, idx) in drawing_areas.iter().zip(1..) {
         let mut chart_builder = ChartBuilder::on(&drawing_area);
+    chart_builder.margin(5).set_left_and_bottom_label_area_size(20).caption(format!("{}",data[idx as usize -1].0), ("sans-serif", 40));
 
-    chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
-    let mut chart_context = chart_builder.build_cartesian_2d((1..10).into_segmented(), 0..9).unwrap();
+    let mut chart_context = chart_builder.build_cartesian_2d((0u32..80u32).step(1).into_segmented(), (0f64..2100f64).step(100f64)).unwrap();
     chart_context.configure_mesh().draw().unwrap();
+    println!("{:?}",age_data);
     chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
-    .data((0..10).map(|x| (x, x)))).unwrap();
+    .data(data[idx -1].1.iter().map(|v | (*v as u32,1f64 )))
+   ).unwrap();
     }
     /*===================히스토그램 그리기========================= */
 
@@ -64,18 +79,9 @@ pub fn main(){
      /*Vip */
      println!("{}",train_df.column("VIP").unwrap().null_count());
     let vip_serice= train_df.select(["VIP"]).unwrap();
-     vip_serice.to_ndarray(ordering)
-    
-    //  let root = BitMapBackend::new("./src/spaceship_titanic/vip.png", (800, 600)).into_drawing_area();
-    //  root.fill(&WHITE).unwrap();
-    //  let mut chart_builder = ChartBuilder::on(&root);
-    //  chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
+    println!("{}",train_df.column("Age").unwrap());
+    println!("{:?}",train_df.select(["Age"]).unwrap().describe(Some(&[0f64])));
 
-    //  let mut chart_context = chart_builder.build_cartesian_2d((1..10).into_segmented(), 0..9).unwrap();
-    //  chart_context.configure_mesh().x_desc("x").draw().unwrap();
-    //  chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
-    //  .data((1..20).map(|x| (x, x)))
-    // ).unwrap();
     /*===================processing========================= */
    
 
