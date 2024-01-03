@@ -115,8 +115,8 @@ let  train_df= train_df.clone().lazy().with_columns(
     let root = BitMapBackend::new("./src/spaceship_titanic/vip.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
     let data= [ 
-     ("Age", &vip_transported[0]),
-    ("RoomService", &vip_transported[1]),
+     ("a", &vip_transported[0]),
+    ("b", &vip_transported[1]),
   ];
   let mut chart_builder = ChartBuilder::on(&root);
   chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
