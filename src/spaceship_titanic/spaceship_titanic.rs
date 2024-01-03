@@ -87,11 +87,14 @@ let train_df = train_df
         col("Age").fill_null(col("Age").median()),
     ])
     .collect().unwrap();
-let train_df= train_df.clone().lazy().with_columns(
-[col("Cabin")]
+let  train_df= train_df.clone().lazy().with_columns(
+[col("Cabin").str().split(lit("/")).list().get(lit(0)).alias("Cabin_1"),
+       col("Cabin").str().split(lit("/")).list().get(lit(1)).alias("Cabin_2"),
+        col("Cabin").str().split(lit("/")).list().get(lit(2)).alias("Cabin_3"),
+        ]
 ).collect().unwrap();
-// let cab= train_df.clone()
-// .lazy().with_column(col("Cabin"))
+  let  train_df= train_df.drop("Cabin").unwrap();
+  println!("{}",train_df);
     /*===================processing========================= */
    
 
