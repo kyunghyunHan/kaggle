@@ -101,38 +101,33 @@ let  train_df= train_df.clone().lazy().with_columns(
 
 
   /*VIP */
-    let result = train_df
+    let vip_result = train_df
    .group_by(&["VIP"]).unwrap().select(["Transported"]).groups().unwrap();
-   let  result= result.clone().lazy().with_columns(
+   let  vip_result= vip_result.clone().lazy().with_columns(
     [
             col("groups").list().len()
     
             ]
     ).collect().unwrap();
+    let vip_transported:Vec<u32>= vip_result.column("groups").unwrap().u32().unwrap().into_no_null_iter().collect();
+    println!("{:?}",vip_transported);
 
-    println!("{}",result)
+    let root = BitMapBackend::new("./src/spaceship_titanic/vip.png", (800, 600)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+    let data= [ 
+     ("Age", &vip_transported[0]),
+    ("RoomService", &vip_transported[1]),
+  ];
+  let mut chart_builder = ChartBuilder::on(&root);
+  chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
+  let mut chart_context = chart_builder.build_cartesian_2d(["a","b"].into_segmented(), (0u32..8500u32).step(100u32)).unwrap();
+  chart_context.configure_mesh().draw().unwrap();
+  chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
+  .data(data.iter().map(|v | (&v.0 ,*v.1 )))
+ ).unwrap();
+
     /*===================processing========================= */
-    // let spa_data= result.column("groups").unwrap();
-    // println!("{}",spa_data);
 
-    // let vr_deck_data:Vec<f64>= result.column("groups").unwrap().f64().unwrap().into_no_null_iter().collect();
-
-    
-//   let a=  Series::from_any_values("a", &[spa_data], false).unwrap()
-
-    //  let root = BitMapBackend::new("./src/spaceship_titanic/histogram.png", (800, 600)).into_drawing_area();
-    //  root.fill(&WHITE).unwrap();
-    //  let data= [ 
-    //   ("Age", &age_data),
-    //  ("RoomService", &room_service_data),
-    // ];
-    //  let mut chart_builder = ChartBuilder::on(&drawing_area);
-    //  chart_builder.margin(5).set_left_and_bottom_label_area_size(20).caption(format!("{}",data[idx as usize -1].0), ("sans-serif", 40));
-    //  let mut chart_context = chart_builder.build_cartesian_2d((0u32..80u32).step(1).into_segmented(), (0f64..2100f64).step(100f64)).unwrap();
-    //  chart_context.configure_mesh().draw().unwrap();
-    //  chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
-    //  .data(data[idx -1].1.iter().map(|v | (*v as u32,1f64 )))
-    // ).unwrap();
 
 /*===================result========================= */
 }
