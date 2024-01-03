@@ -89,14 +89,50 @@ let train_df = train_df
     .collect().unwrap();
 let  train_df= train_df.clone().lazy().with_columns(
 [col("Cabin").str().split(lit("/")).list().get(lit(0)).alias("Cabin_1"),
-       col("Cabin").str().split(lit("/")).list().get(lit(1)).alias("Cabin_2"),
+       col("Cabin").str().split(lit("/")).list().get(lit(1)).alias("Cabin_2").cast(DataType::Float64),
         col("Cabin").str().split(lit("/")).list().get(lit(2)).alias("Cabin_3"),
+        col("VIP").cast(DataType::Int64),
+        col("CryoSleep").cast(DataType::Int64)
+
         ]
 ).collect().unwrap();
-  let  train_df= train_df.drop("Cabin").unwrap();
-  println!("{}",train_df);
-    /*===================processing========================= */
-   
+  let  train_df= train_df.drop_many(&["PassengerId", "Name", "Cabin"]);
+  println!("{}",train_df.null_count());
 
-    /*===================result========================= */
+
+  /*VIP */
+    let result = train_df
+   .group_by(&["VIP"]).unwrap().select(["Transported"]).groups().unwrap();
+   let  result= result.clone().lazy().with_columns(
+    [
+            col("groups").list().len()
+    
+            ]
+    ).collect().unwrap();
+
+    println!("{}",result)
+    /*===================processing========================= */
+    // let spa_data= result.column("groups").unwrap();
+    // println!("{}",spa_data);
+
+    // let vr_deck_data:Vec<f64>= result.column("groups").unwrap().f64().unwrap().into_no_null_iter().collect();
+
+    
+//   let a=  Series::from_any_values("a", &[spa_data], false).unwrap()
+
+    //  let root = BitMapBackend::new("./src/spaceship_titanic/histogram.png", (800, 600)).into_drawing_area();
+    //  root.fill(&WHITE).unwrap();
+    //  let data= [ 
+    //   ("Age", &age_data),
+    //  ("RoomService", &room_service_data),
+    // ];
+    //  let mut chart_builder = ChartBuilder::on(&drawing_area);
+    //  chart_builder.margin(5).set_left_and_bottom_label_area_size(20).caption(format!("{}",data[idx as usize -1].0), ("sans-serif", 40));
+    //  let mut chart_context = chart_builder.build_cartesian_2d((0u32..80u32).step(1).into_segmented(), (0f64..2100f64).step(100f64)).unwrap();
+    //  chart_context.configure_mesh().draw().unwrap();
+    //  chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
+    //  .data(data[idx -1].1.iter().map(|v | (*v as u32,1f64 )))
+    // ).unwrap();
+
+/*===================result========================= */
 }
