@@ -1,5 +1,6 @@
 
 use ndarray::prelude::*;
+use polars::lazy::dsl::col;
 use polars::prelude::*;
 
 use std::fs::File;
