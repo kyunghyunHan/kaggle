@@ -129,8 +129,10 @@ let  train_df= train_df.clone().lazy().with_columns(
    let cryosleep_result = train_df
    .group_by(&["CryoSleep"]).unwrap().select(["Transported"]).mean().unwrap();
 let sorted_means = cryosleep_result.sort(&["Transported_mean"], vec![false, true], false).unwrap();
-let arrived = train_df.lazy().filter(col("Transported").eq(true)).collect().unwrap().column("CryoSleep").unwrap().value_counts(true,false).unwrap();
+let arrived = train_df.clone().lazy().filter(col("Transported").eq(true)).collect().unwrap().column("CryoSleep").unwrap().value_counts(true,false).unwrap();
 println!("{}",arrived);
+let not_arrived = train_df.clone().lazy().filter(col("Transported").eq(false)).collect().unwrap().column("CryoSleep").unwrap().value_counts(true,false).unwrap();
+println!("{}",not_arrived);
 
 
 // let  train_df= train_df.clone().lazy().with_columns(
