@@ -16,7 +16,7 @@ Transported : target
 */
 use std::fs::File;
 use ndarray::prelude::*;
-use polars::{prelude::*, lazy::dsl::col};
+use polars::{prelude::*, lazy::dsl::col, error::constants::TRUE};
 use plotters::prelude::*;
 
 pub fn main(){
@@ -106,7 +106,6 @@ let  train_df= train_df.clone().lazy().with_columns(
    let  vip_result= vip_result.clone().lazy().with_columns(
     [
             col("groups").list().len()
-    
             ]
     ).collect().unwrap();
     let vip_transported:Vec<u32>= vip_result.column("groups").unwrap().u32().unwrap().into_no_null_iter().collect();
@@ -125,6 +124,51 @@ let  train_df= train_df.clone().lazy().with_columns(
   chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
   .data(data.iter().map(|v | (&v.0 ,*v.1 )))
  ).unwrap();
+   /*CryoSleep */
+
+   let cryosleep_result = train_df
+   .group_by(&["CryoSleep"]).unwrap().select(["Transported"]).mean().unwrap();
+let sorted_means = cryosleep_result.sort(&["Transported_mean"], vec![false, true], false).unwrap();
+let arrived = train_df.lazy().filter(col("Transported").eq(true)).collect().unwrap().column("CryoSleep").unwrap().value_counts(true,false).unwrap();
+println!("{}",arrived);
+
+
+// let  train_df= train_df.clone().lazy().with_columns(
+//     [col("Cabin").str().split(lit("/")).list().get(lit(0)).alias("Cabin_1"),
+//            col("Cabin").str().split(lit("/")).list().get(lit(1)).alias("Cabin_2").cast(DataType::Float64),
+//             col("Cabin").str().split(lit("/")).list().get(lit(2)).alias("Cabin_3"),
+//             col("VIP").cast(DataType::Int64),
+//             col("CryoSleep").cast(DataType::Int64)
+    
+//             ]
+//     ).collect().unwrap();
+//    let  cryosleep_result= cryosleep_result.clone().lazy().with_columns(
+//     [
+//             col("groups").list().len()
+//             ]
+//     ).collect().unwrap();
+
+//     let cryosleep_transported:Vec<u32>= cryosleep_result.column("groups").unwrap().u32().unwrap().into_no_null_iter().collect();
+
+//     println!("{}",cryosleep_result.column("groups").unwrap());
+//     let root = BitMapBackend::new("./src/spaceship_titanic/CryoSleep.png", (800, 600)).into_drawing_area();
+//     root.fill(&WHITE).unwrap();
+// println!("{}",cryosleep_transported[0]);
+//   let mut chart_builder = ChartBuilder::on(&root);
+//   chart_builder.margin(5).set_left_and_bottom_label_area_size(20);
+//   let mut chart_context = chart_builder.build_cartesian_2d(["arrived","not_arrived"].into_segmented(), (0u32..8500u32).step(100u32)).unwrap();
+//   chart_context.configure_mesh().draw().unwrap();
+//   chart_context.draw_series(Histogram::vertical(&chart_context).style(BLUE.filled()).margin(10)
+//   .data((0..cryosleep_transported[1]).step(500).values().map(|v | (&"arrived" ,v )))
+//  ).unwrap();
+//  chart_context.draw_series(Histogram::vertical(&chart_context).style(RED.filled()).margin(10)
+//  .data((0..cryosleep_transported[0]).step(1).values().map(|v | (&"not_arrived" ,v )))
+// ).unwrap();
+
+
+
+//  /* */
+//  println!("{}",train_df.column("HomePlanet").unwrap());
 
     /*===================processing========================= */
 
