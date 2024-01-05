@@ -2,7 +2,7 @@ use linfa::correlation::{self, PearsonCorrelation};
 use ndarray::prelude::*;
 use polars::prelude::*;
 // use polars_lazy::{prelude::*, dsl::{col, self}};
-use plotters::prelude::*;
+use plotters::{prelude::*, style::full_palette::PURPLE};
 use linfa::prelude::*;
 use linfa_linear::LinearRegression;
 use xgboost::{parameters, DMatrix, Booster};
@@ -150,23 +150,20 @@ pub fn main(){
     let root = BitMapBackend::new("./src/house_price/house_price.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
      let data= [
-        ("total_bsmt_sf",total_bsmt_sf_data_vec.clone(),BLUE),
-        ("1stFlrSF",one_st_flr_sf_data_vec,RED),
-        ("two_st_flr_sf_data_vec",two_st_flr_sf_data_vec,YELLOW),
-        ("total_bsmt_sf",total_bsmt_sf_data_vec.clone(),GREEN),
+        ("total_bsmt_sf",total_bsmt_sf_data_vec.clone(),BLUE,0.0..6000.0,(0.0..800000.0)),
+        ("1stFlrSF",one_st_flr_sf_data_vec,PURPLE,(0.0..4000.0),(0.0..700000.0)),
+        ("two_st_flr_sf_data_vec",two_st_flr_sf_data_vec,GREEN,(0.0..2000.0),(0.0..700000.0)),
+        ("total_bsmt_sf",total_bsmt_sf_data_vec.clone(),RED,(0.0..6000.0),(0.0..800000.0)),
 
         ];
     let drawing_areas = root.split_evenly((2, 2));
     for (drawing_area, idx) in drawing_areas.iter().zip(1..) {
-        let x_range = 0.0..6000.0; // Adjust the x-axis range based on your data
-        let y_range = 0.0..800000.0; // Adjust the y-axis range based on your data
-         
-        println!("{}",idx);
+ 
         let mut chart: ChartContext<'_, BitMapBackend<'_>, Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>> = ChartBuilder::on(&drawing_area)
         .margin(20)
         .x_label_area_size(40)
         .y_label_area_size(40)
-        .build_cartesian_2d(x_range, y_range)
+        .build_cartesian_2d(data[idx as usize-1].3.clone(), data[idx as usize-1].4.clone())
         .unwrap();
 
     chart
