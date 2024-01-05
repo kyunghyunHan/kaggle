@@ -109,9 +109,16 @@ pub fn main(){
     println!("{:?}",train_df.shape());
     println!("{:?}",train_df.head(None));
     println!("데이터 정보 확인:{:?}",train_df.schema());
-    println!("{}",train_df.null_count());
-    
-    
+    println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
+    println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
+
+    /*===================sale_price log 정규화========================= */
+    let sale_price_data:Vec<i64>= train_df.column("SalePrice").unwrap().i64().unwrap().into_no_null_iter().collect();
+    let sale_price_data:Vec<f64>=sale_price_data.into_iter().map(|x|x as f64).collect();
+    let sale_price_data: Vec<f64> = sale_price_data.iter().map(|&x| x.ln()).collect();
+    println!("{:?}",sale_price_data);
+    /*===================sale_price log 정규화========================= */
+
     /*===================data 불러오기========================= */
     /*====================correlation=================== */
     // let x_data= train_df.drop("SalePrice").unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
