@@ -1,10 +1,12 @@
 use linfa::correlation::{self, PearsonCorrelation};
 use ndarray::prelude::*;
 use polars::prelude::*;
+// use polars_lazy::{prelude::*, dsl::{col, self}};
 use plotters::prelude::*;
 use linfa::prelude::*;
 use linfa_linear::LinearRegression;
 use xgboost::{parameters, DMatrix, Booster};
+use ndarray_stats::CorrelationExt;
 
 /*
 SalePrice - 부동산 판매 가격(달러)입니다. 이것이 예측하려는 목표 변수입니다.
@@ -104,31 +106,83 @@ pub fn main(){
     .with_null_values(Some(NullValues::AllColumns(vec!["NA".to_owned()])))
     .finish()
     .unwrap();  
-    
-
     println!("{:?}",train_df.shape());
     println!("{:?}",train_df.head(None));
     println!("데이터 정보 확인:{:?}",train_df.schema());
-    println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
-    println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
+    // println!("수치형 데이터 확인:{:?}",train_df.dtypes(None).unwrap());
+    // println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
 
     /*===================sale_price log 정규화========================= */
     let sale_price_data:Vec<i64>= train_df.column("SalePrice").unwrap().i64().unwrap().into_no_null_iter().collect();
     let sale_price_data:Vec<f64>=sale_price_data.into_iter().map(|x|x as f64).collect();
     let sale_price_data: Vec<f64> = sale_price_data.iter().map(|&x| x.ln()).collect();
     println!("{:?}",sale_price_data);
+
     /*===================sale_price log 정규화========================= */
-
     /*===================data 불러오기========================= */
-    /*====================correlation=================== */
-    // let x_data= train_df.drop("SalePrice").unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
-    // let y_data:Vec<f64>= train_df.column("SalePrice").unwrap().i64().unwrap().into_no_null_iter().into_iter().map(|x|x.as_f64()).collect();
-    // let y_data= arr1(&y_data);
-    // let a= Dataset::new(x_data, y_data);
-    //  println!("{:?}",a.pearson_correlation_with_p_value(100).get_coeffs());
-    /*====================correlation=================== */
-    /*===================model========================= */
 
+
+    /*TotalBsmtSF */
+    // let total_bsmt_sf_data= train_df.column("TotalBsmtSF").unwrap();
+    // let total_bsmt_sf_data:Vec<i64> = total_bsmt_sf_data.i64().unwrap().into_no_null_iter().collect();
+    // let total_bsmt_sf_data:Vec<f64> = total_bsmt_sf_data.into_iter().map(|x|x as f64).collect();
+    let total_bsmt_sf_data= train_df.select(&["TotalBsmtSF","SalePrice"]).unwrap();
+    let total_bsmt_sf_data= total_bsmt_sf_data.to_ndarray::<Int64Type>(IndexOrder::Fortran).unwrap();
+    
+    let mut x_train: Vec<Vec<_>> = Vec::new();
+    for row in total_bsmt_sf_data.outer_iter() {
+        let row_vec: Vec<_> = row.iter().cloned().collect();
+        x_train.push(row_vec);
+    }
+    println!("{:?}",x_train);
+
+    let root = BitMapBackend::new("./src/house_price/house_price.png", (800, 600)).into_drawing_area();
+    root.fill(&WHITE).unwrap();
+   
+    let drawing_areas = root.split_evenly((2, 2));
+    for (drawing_area, idx) in drawing_areas.iter().zip(1..) {
+        let x_range = 0.0..6000.0; // Adjust the x-axis range based on your data
+        let y_range = 0.0..800000.0; // Adjust the y-axis range based on your data
+    
+    
+        let mut chart = ChartBuilder::on(&drawing_area)
+        .margin(20)
+        .x_label_area_size(40)
+        .y_label_area_size(40)
+        .build_cartesian_2d(x_range, y_range)
+        .unwrap();
+
+    chart
+        .configure_mesh()
+        .x_desc("Length")
+        .y_desc("Weight")
+        .draw()
+        .unwrap();
+
+    // chart
+    //     .draw_series(
+    //         total_bsmt_sf_data
+    //             .iter()
+               
+    //             .map(|(x)| {
+    //                 Circle::new((*x, *x), 5, Into::<ShapeStyle>::into(&RGBColor(255, 0, 0)))
+    //             }),
+    //     )
+    //     .unwrap();
+
+    chart
+        .draw_series(
+            x_train
+                .iter()
+                .map(|x| {
+                    Circle::new((x[0]as f64, x[1]as f64), 5, Into::<ShapeStyle>::into(&RGBColor(0, 0, 255)))
+                }),
+        )
+        .unwrap();
+
+}
+
+    /*===================model========================= */
     // let target_data= train_df.column("SalePrice").unwrap();
     // let target_data:Vec<f64>= target_data.i64().unwrap().into_no_null_iter().into_iter().map(|x|x.as_f64()).collect();
     // let target_data= arr1(&target_data);

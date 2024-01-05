@@ -43,9 +43,9 @@ let result_df = CsvReader::from_path("./datasets/spaceship-titanic/sample_submis
     println!("데이터 정보 확인:{:?}",test_df.schema());
 
     println!("결측치 확인:{:?}",train_df.null_count());
-    println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
+    // println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
 
-    println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
+    // println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
     let age_data:Vec<f64>= train_df.column("Age").unwrap().f64().unwrap().into_no_null_iter().collect();
     let room_service_data:Vec<f64>= train_df.column("RoomService").unwrap().f64().unwrap().into_no_null_iter().collect();
     let food_court_data:Vec<f64>= train_df.column("FoodCourt").unwrap().f64().unwrap().into_no_null_iter().collect();
@@ -74,6 +74,8 @@ let result_df = CsvReader::from_path("./datasets/spaceship-titanic/sample_submis
     .data(data[idx -1].1.iter().map(|v | (*v as u32,1f64 )))
    ).unwrap();
     }
+
+
     /*===================히스토그램 그리기========================= */
 
     /*===================processing========================= */
@@ -386,7 +388,7 @@ let passenger_id_series =result_id_df.clone();
 let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
 
 let mut df= df.clone().lazy().with_columns([
-    col("Transported").cast(DataType::Utf8)
+    col("Transported").cast(DataType::String)
 ]).collect().unwrap();
 
 let mut df= df.clone().lazy().with_columns([
