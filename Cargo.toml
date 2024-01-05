@@ -7,12 +7,6 @@ edition = "2021"
 
 [dependencies]
 linfa = "0.7.0"
-linfa-trees = "0.7.0"
-linfa-kernel = "0.7.0"
-linfa-svm = "0.7.0"
-linfa-logistic = "0.7.0"
-linfa-datasets = { version = "0.7.0", features = ["iris"] }
-linfa-linear = "0.7.0"
 csv = "1.1"
 ndarray = "0.15.6"
 smartcore="0.3.2"
@@ -20,3 +14,4 @@ plotters = "0.3.5"
 polars = { version = "0.35.4", features = ["ndarray","to_dummies","lazy","describe","strings","list_count"] }
 linfa-nn = "0.7.0"
 chrono = "0.4.31"
+linfa-linear = "0.7.0"

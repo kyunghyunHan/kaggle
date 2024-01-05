@@ -53,9 +53,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.77"
+version = "1.0.79"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c9d19de80eff169429ac1e9f48fffb163916b448a44e8e046186232046d9e1f9"
+checksum = "080e9890a082662b09c1ad45f567faeeb47f22b5fb23895fbe1e651e718e25ca"
 
 [[package]]
 name = "approx"
@@ -771,13 +771,8 @@ dependencies = [
  "chrono",
  "csv",
  "linfa",
- "linfa-datasets",
- "linfa-kernel",
  "linfa-linear",
- "linfa-logistic",
  "linfa-nn",
- "linfa-svm",
- "linfa-trees",
  "ndarray",
  "plotters",
  "polars",
@@ -847,32 +842,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "linfa-datasets"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64dae01fe9bdd87d3e40e469ebd7cf1bedde8f37b584ea8356ea06f063dfc4bf"
-dependencies = [
- "csv",
- "flate2",
- "linfa",
- "ndarray",
- "ndarray-csv",
-]
-
-[[package]]
-name = "linfa-kernel"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ad080970df2efcfd0314ab03eafc50cd60994b4b29741bf93f4905c18abd55f"
-dependencies = [
- "linfa",
- "linfa-nn",
- "ndarray",
- "num-traits",
- "sprs",
-]
-
-[[package]]
 name = "linfa-linalg"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -899,21 +868,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "linfa-logistic"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63d9d683556ea0fa3d11035e3b67588ce71ff16a329ea0677241409628a0165b"
-dependencies = [
- "argmin",
- "argmin-math",
- "linfa",
- "ndarray",
- "ndarray-stats",
- "num-traits",
- "thiserror",
-]
-
-[[package]]
 name = "linfa-nn"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -927,31 +881,6 @@ dependencies = [
  "num-traits",
  "order-stat",
  "thiserror",
-]
-
-[[package]]
-name = "linfa-svm"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a38314e0d0bd01f4b165a2c8dbba9e9feaabf8452932553c1d375b5957596477"
-dependencies = [
- "linfa",
- "linfa-kernel",
- "ndarray",
- "ndarray-rand",
- "num-traits",
- "thiserror",
-]
-
-[[package]]
-name = "linfa-trees"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1895ab54f5553c7891e6283636e1e2081b157295a245e42ba853bcd8ac183cc6"
-dependencies = [
- "linfa",
- "ndarray",
- "ndarray-rand",
 ]
 
 [[package]]
@@ -1059,30 +988,6 @@ dependencies = [
  "num-integer",
  "num-traits",
  "rawpointer",
- "rayon",
-]
-
-[[package]]
-name = "ndarray-csv"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f7c71981ebc5a541b64a8af9db36502669932550d23c0e5e8e5a873d11902b4"
-dependencies = [
- "csv",
- "either",
- "ndarray",
- "serde",
-]
-
-[[package]]
-name = "ndarray-rand"
-version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65608f937acc725f5b164dcf40f4f0bc5d67dc268ab8a649d3002606718c4588"
-dependencies = [
- "ndarray",
- "rand",
- "rand_distr",
 ]
 
 [[package]]
