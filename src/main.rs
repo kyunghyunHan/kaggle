@@ -3,6 +3,6 @@ mod spaceship_titanic;
 mod titanic;
 fn main() {
     // titanic::titanic::main();
-    // spaceship_titanic::spaceship_titanic::main();
-    house_price::house_price::main();
+    spaceship_titanic::spaceship_titanic::main();
+    // house_price::house_price::main();
 }

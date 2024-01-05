@@ -15,3 +15,4 @@ polars = { version = "0.35.4", features = ["ndarray","to_dummies","lazy","descri
 linfa-nn = "0.7.0"
 chrono = "0.4.31"
 linfa-linear = "0.7.0"
+xgboost = "0.1.4"

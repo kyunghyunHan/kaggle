@@ -4,6 +4,8 @@ use polars::prelude::*;
 use plotters::prelude::*;
 use linfa::prelude::*;
 use linfa_linear::LinearRegression;
+use xgboost::{parameters, DMatrix, Booster};
+
 /*
 SalePrice - 부동산 판매 가격(달러)입니다. 이것이 예측하려는 목표 변수입니다.
 MSSubClass : 건물 클래스
@@ -108,7 +110,16 @@ pub fn main(){
     println!("{:?}",train_df.head(None));
     println!("데이터 정보 확인:{:?}",train_df.schema());
     println!("{}",train_df.null_count());
+    
+    
     /*===================data 불러오기========================= */
+    /*====================correlation=================== */
+    // let x_data= train_df.drop("SalePrice").unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
+    // let y_data:Vec<f64>= train_df.column("SalePrice").unwrap().i64().unwrap().into_no_null_iter().into_iter().map(|x|x.as_f64()).collect();
+    // let y_data= arr1(&y_data);
+    // let a= Dataset::new(x_data, y_data);
+    //  println!("{:?}",a.pearson_correlation_with_p_value(100).get_coeffs());
+    /*====================correlation=================== */
     /*===================model========================= */
 
     // let target_data= train_df.column("SalePrice").unwrap();
@@ -126,5 +137,47 @@ pub fn main(){
     // let r2 = pred.r2(&a).unwrap();
     // println!("r2 from prediction: {}", r2);
     /*===================model========================= */
+/*===================xgboost========================= */
+// println!("{:?}",x_data.shape());
+// let b = x_data.into_shape(8693* 22).unwrap();
+// let x_train:Vec<f32>= b.into_iter().collect();
+
+// let num_rows = 8693;
+// let y_train:Vec<f32>= y_target.iter().map(|x|*x as f32).collect();
+
+// // convert training data into XGBoost's matrix format
+// let mut dtrain = DMatrix::from_dense(&x_train,num_rows).unwrap();
+
+// // set ground truth labels for the training matrix
+// dtrain.set_labels(&y_train).unwrap();
+
+// // test matrix with 1 row
+// println!("{:?}",test_data.shape());
+
+// let x_test = test_data.into_shape(4277* 22).unwrap();
+// let x_test:Vec<f32>= x_test.into_iter().collect();
+
+// let num_rows = 4277;
+// let result_train:Vec<f32>= result_train.iter().map(|x|*x as f32).collect();
+
+
+// let mut dtest = DMatrix::from_dense(&x_test, num_rows).unwrap();
+// dtest.set_labels(&result_train).unwrap();
+
+// // specify datasets to evaluate against during training
+// let evaluation_sets = &[(&dtrain, "train"), (&dtest, "test")];
+
+// // specify overall training setup
+// let training_params = parameters::TrainingParametersBuilder::default()
+//     .dtrain(&dtrain)
+//     .evaluation_sets(Some(evaluation_sets))
+//     .build()
+//     .unwrap();
+
+// // train model, and print evaluation data
+// let bst = Booster::train(&training_params).unwrap();
+// let y= bst.predict(&dtest).unwrap();
+// println!("{:?}", bst.predict(&dtest).unwrap());
+/*===================xgboost========================= */
 
 }
