@@ -123,29 +123,46 @@ pub fn main(){
 
 
     /*TotalBsmtSF */
-    // let total_bsmt_sf_data= train_df.column("TotalBsmtSF").unwrap();
-    // let total_bsmt_sf_data:Vec<i64> = total_bsmt_sf_data.i64().unwrap().into_no_null_iter().collect();
-    // let total_bsmt_sf_data:Vec<f64> = total_bsmt_sf_data.into_iter().map(|x|x as f64).collect();
     let total_bsmt_sf_data= train_df.select(&["TotalBsmtSF","SalePrice"]).unwrap();
     let total_bsmt_sf_data= total_bsmt_sf_data.to_ndarray::<Int64Type>(IndexOrder::Fortran).unwrap();
-    
-    let mut x_train: Vec<Vec<_>> = Vec::new();
+    let mut total_bsmt_sf_data_vec: Vec<Vec<_>> = Vec::new();
     for row in total_bsmt_sf_data.outer_iter() {
         let row_vec: Vec<_> = row.iter().cloned().collect();
-        x_train.push(row_vec);
+        total_bsmt_sf_data_vec.push(row_vec);
     }
-    println!("{:?}",x_train);
+    let one_st_flr_sf_data= train_df.select(&["1stFlrSF","SalePrice"]).unwrap();
+    let one_st_flr_sf_data= one_st_flr_sf_data.to_ndarray::<Int64Type>(IndexOrder::Fortran).unwrap();
+    let mut one_st_flr_sf_data_vec: Vec<Vec<_>> = Vec::new();
+    for row in one_st_flr_sf_data.outer_iter() {
+        let row_vec: Vec<_> = row.iter().cloned().collect();
+        one_st_flr_sf_data_vec.push(row_vec);
+    }
 
+    let two_st_flr_sf_data= train_df.select(&["2ndFlrSF","SalePrice"]).unwrap();
+    let two_st_flr_sf_data= two_st_flr_sf_data.to_ndarray::<Int64Type>(IndexOrder::Fortran).unwrap();
+    let mut two_st_flr_sf_data_vec: Vec<Vec<_>> = Vec::new();
+    for row in two_st_flr_sf_data.outer_iter() {
+        let row_vec: Vec<_> = row.iter().cloned().collect();
+        two_st_flr_sf_data_vec.push(row_vec);
+    }
+
+    
     let root = BitMapBackend::new("./src/house_price/house_price.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
-   
+     let data= [
+        ("total_bsmt_sf",total_bsmt_sf_data_vec.clone(),BLUE),
+        ("1stFlrSF",one_st_flr_sf_data_vec,RED),
+        ("two_st_flr_sf_data_vec",two_st_flr_sf_data_vec,YELLOW),
+        ("total_bsmt_sf",total_bsmt_sf_data_vec.clone(),GREEN),
+
+        ];
     let drawing_areas = root.split_evenly((2, 2));
     for (drawing_area, idx) in drawing_areas.iter().zip(1..) {
         let x_range = 0.0..6000.0; // Adjust the x-axis range based on your data
         let y_range = 0.0..800000.0; // Adjust the y-axis range based on your data
-    
-    
-        let mut chart = ChartBuilder::on(&drawing_area)
+         
+        println!("{}",idx);
+        let mut chart: ChartContext<'_, BitMapBackend<'_>, Cartesian2d<plotters::coord::types::RangedCoordf64, plotters::coord::types::RangedCoordf64>> = ChartBuilder::on(&drawing_area)
         .margin(20)
         .x_label_area_size(40)
         .y_label_area_size(40)
@@ -159,23 +176,12 @@ pub fn main(){
         .draw()
         .unwrap();
 
-    // chart
-    //     .draw_series(
-    //         total_bsmt_sf_data
-    //             .iter()
-               
-    //             .map(|(x)| {
-    //                 Circle::new((*x, *x), 5, Into::<ShapeStyle>::into(&RGBColor(255, 0, 0)))
-    //             }),
-    //     )
-    //     .unwrap();
-
     chart
         .draw_series(
-            x_train
+            data[idx as usize-1].1
                 .iter()
                 .map(|x| {
-                    Circle::new((x[0]as f64, x[1]as f64), 5, Into::<ShapeStyle>::into(&RGBColor(0, 0, 255)))
+                    Circle::new((x[0]as f64, x[1]as f64), 5, Into::<ShapeStyle>::into(data[idx as usize -1].2))
                 }),
         )
         .unwrap();
