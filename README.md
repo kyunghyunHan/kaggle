@@ -1,4 +1,4 @@
 # Kaggle 
 
 # List
-- [dqdq](www.naver.com)
+- [Titamic](src/titanic/titanic.md)
