@@ -1,1 +1,1 @@
-# Titamic
+# Titanic - Machine Learning from Disaster
