@@ -1,1 +1,1 @@
-pub mod house_price;
+pub mod model;

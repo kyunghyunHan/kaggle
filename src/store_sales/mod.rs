@@ -1,1 +1,1 @@
-pub mod store_sales;
+pub mod model;

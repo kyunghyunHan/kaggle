@@ -1,1 +1,1 @@
-pub mod spaceship_titanic;
+pub mod model;
