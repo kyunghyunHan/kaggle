@@ -36,7 +36,7 @@ pub fn main() {
         .sort(&["Exited_mean"], vec![false, true], false)
         .unwrap();
 
-    println!("{}",credit_score_data);
+    println!("{}", credit_score_data);
     let cryosleep_arrived = train_df
         .clone()
         .lazy()
@@ -47,7 +47,7 @@ pub fn main() {
         .unwrap()
         .value_counts(true, false)
         .unwrap();
-    println!("{}",cryosleep_arrived);
+    println!("{}", cryosleep_arrived);
 
     let cryosleep_not_arrived = train_df
         .clone()
@@ -74,10 +74,7 @@ pub fn main() {
         .into_no_null_iter()
         .collect();
 
-    let data1: [(u32, u32); 2] = [
-        (0, cryosleep_arrived_vec[1]),
-        (1, cryosleep_arrived_vec[0]),
-    ];
+    let data1: [(u32, u32); 2] = [(0, cryosleep_arrived_vec[1]), (1, cryosleep_arrived_vec[0])];
     let data2: [(u32, u32); 2] = [
         (3, cryosleep_not_arrived_vec[0]),
         (4, cryosleep_not_arrived_vec[1]),
