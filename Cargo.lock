@@ -936,6 +936,7 @@ dependencies = [
  "csv",
  "linfa",
  "linfa-linear",
+ "linfa-logistic",
  "linfa-nn",
  "ndarray",
  "ndarray-stats",
@@ -1040,6 +1041,21 @@ dependencies = [
  "linfa",
  "linfa-linalg",
  "ndarray",
+ "num-traits",
+ "thiserror",
+]
+
+[[package]]
+name = "linfa-logistic"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63d9d683556ea0fa3d11035e3b67588ce71ff16a329ea0677241409628a0165b"
+dependencies = [
+ "argmin",
+ "argmin-math",
+ "linfa",
+ "ndarray",
+ "ndarray-stats",
  "num-traits",
  "thiserror",
 ]

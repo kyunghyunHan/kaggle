@@ -35,7 +35,7 @@ pub fn main(){
         .margin(20)
         .x_label_area_size(40)
         .y_label_area_size(40)
-        .build_cartesian_2d(350f64..900f64, 0f64..1f64)
+        .build_cartesian_2d((350f64..900f64), 350f64..900f64)
         .unwrap();
 
     chart
@@ -48,12 +48,13 @@ pub fn main(){
             credit_score_vec
                 .iter()
                 .map(|x| {
-                    Circle::new((x[0]as f64, x[1]as f64), 5, Into::<ShapeStyle>::into(RED))
+                    Circle::new((x[0]as f64, x[0]as f64), 5, Into::<ShapeStyle>::into(RED))
                 }),
         )
         .unwrap();
 
-
+ 
+    
     /*======================= */
 
 }
