@@ -1,20 +1,15 @@
-
-use ndarray::prelude::*;
-use polars::lazy::dsl::col;
 use polars::prelude::*;
-
 use std::fs::File;
 use smartcore::neighbors::knn_classifier::*;
 use smartcore::linalg::basic::matrix::DenseMatrix;
-use smartcore::model_selection::train_test_split;
-use smartcore::linear::logistic_regression::LogisticRegression;
 use smartcore::metrics::*;
 use polars::prelude::{CsvWriter, DataFrame, NamedFrom, SerWriter, Series};
-use smartcore::svm::svc::{SVC,SVCParameters};
 use smartcore::ensemble::random_forest_classifier::{RandomForestClassifier,RandomForestClassifierParameters};
 
 
 pub fn main(){
+    /*===================data========================= */
+
    let train_df: DataFrame = CsvReader::from_path("./datasets/titanic/train.csv")
     .unwrap()
     .finish().unwrap().drop_many(&["PassengerId","Name", "Ticket"]);
@@ -28,7 +23,8 @@ pub fn main(){
    //데이터 미리보기
    println!("데이터 미리보기:{}",train_df.head(None));
    println!("데이터 정보 확인:{:?}",train_df.schema());
-  
+    /*===================data========================= */
+
  
    
 /*===================processing========================= */
