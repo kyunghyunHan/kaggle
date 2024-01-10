@@ -10,6 +10,7 @@ use std::fs::File;
 
 pub fn main() {
     /*===================data========================= */
+    //필요없는 PassegerId,Name,Ticket제거
     let train_df: DataFrame = CsvReader::from_path("./datasets/titanic/train.csv")
         .unwrap()
         .finish()
@@ -19,7 +20,7 @@ pub fn main() {
         .unwrap()
         .finish()
         .unwrap()
-        .drop_many(&["Name", "Ticket"]);
+        .drop_many(&["PassengerId","Name", "Ticket"]);
 
     let submission_df = CsvReader::from_path("./datasets/titanic/gender_submission.csv")
         .unwrap()
@@ -33,11 +34,8 @@ pub fn main() {
     범주형 : Survived, Sex, Embarkd / PClass
     수치형 : SibSp, Parch / Age, Fare
     */
-    /*===================data========================= */
-
     /*===================processing========================= */
     /*null처리 */
-
     let train_df = train_df
         .clone()
         .lazy()
@@ -48,7 +46,6 @@ pub fn main() {
         .collect()
         .unwrap()
         .drop_many(&["Cabin"]);
-
     let test_df: DataFrame = test_df
         .clone()
         .lazy()
@@ -65,7 +62,7 @@ pub fn main() {
     println!("중간점검:{:?}", train_df.tail(Some(3)));
     println!("null확인:{}", train_df.null_count());
     println!("null확인:{}", test_df.null_count());
-
+    /*One hot encoding */
     //dummies만들기
     let pclass_train_dummies: DataFrame = train_df
         .select(["Pclass"])
@@ -111,8 +108,6 @@ pub fn main() {
         .unwrap();
     /*Embarked */
 
-    /*채우기 */
-
     let embarked_train_dummies: DataFrame = train_df
         .select(["Embarked"])
         .unwrap()
@@ -134,7 +129,7 @@ pub fn main() {
         .drop(&"Embarked")
         .unwrap();
 
-    // /*data 변환 */
+    /*data 변환 */
     //target_data
     let y_train = train_df.column("Survived").unwrap();
     let y_train: Vec<i64> = y_train.i64().unwrap().into_no_null_iter().collect();
@@ -152,9 +147,7 @@ pub fn main() {
     }
     let x_train: DenseMatrix<f64> = DenseMatrix::from_2d_vec(&x_train_vec);
     //test_data
-
-    let x_test = test_df.drop("PassengerId").unwrap().clone();
-    let x_test = x_test
+    let x_test = test_df
         .to_ndarray::<Float64Type>(IndexOrder::Fortran)
         .unwrap();
     let mut x_test_vec: Vec<Vec<_>> = Vec::new();
@@ -164,13 +157,10 @@ pub fn main() {
     }
     let x_test: DenseMatrix<f64> = DenseMatrix::from_2d_vec(&x_test_vec);
     //result_data
-
     let survived: &Series = submission_df.column(&"Survived").unwrap();
 
     let survived: Vec<i64> = survived.i64().unwrap().into_no_null_iter().collect();
     let survived: Vec<i32> = survived.iter().map(|x| *x as i32).collect();
-
-    /*===================processing========================= */
     /*===================model test======================== */
     /*랜덤포레스트 */
     let random_forest = RandomForestClassifier::fit(
@@ -182,17 +172,14 @@ pub fn main() {
     let y_pred: Vec<i32> = random_forest.predict(&x_test).unwrap();
     let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&survived, &y_pred);
     println!("{:?}", acc);
-    /*===================model test======================== */
     /*===================제출용 파일========================= */
     //random forest 가 가장 빠르기 때문에
     let survived_series = Series::new("Survived", y_pred.into_iter().collect::<Vec<i32>>());
-    let passenger_id_series = test_df.column("PassengerId").unwrap().clone();
+    let passenger_id_series = submission_df.column("PassengerId").unwrap().clone();
 
     let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
     let mut output_file: File = File::create("./datasets/titanic/out.csv").unwrap();
     CsvWriter::new(&mut output_file).finish(&mut df).unwrap();
-    /*===================제출용 파일========================= */
     /*===================result========================= */
     //0.8851674641148325
-    /*===================result========================= */
 }
