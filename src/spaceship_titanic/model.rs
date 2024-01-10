@@ -32,7 +32,6 @@ pub fn main() {
     println!("결측치 확인:{:?}", train_df.null_count());
     println!("결측치 확인:{:?}", test_df.null_count());
 
-
     /*================결측치 확인 후 결측치 채우기================ */
     let train_df = train_df
         .clone()
@@ -71,7 +70,6 @@ pub fn main() {
         .collect()
         .unwrap();
 
-    
     /*===================히스토그램 그리기========================= */
 
     let age_data: Vec<f64> = train_df
@@ -152,7 +150,7 @@ pub fn main() {
             .unwrap();
     }
     /*==================Cabin========================= */
-    
+
     let train_df = train_df
         .clone()
         .lazy()
@@ -182,7 +180,6 @@ pub fn main() {
         .collect()
         .unwrap();
 
-       
     let test_df: DataFrame = test_df
         .clone()
         .lazy()
@@ -211,10 +208,80 @@ pub fn main() {
         ])
         .collect()
         .unwrap();
+
+    let cabin_1 = train_df
+        .group_by(&["Cabin_1"])
+        .unwrap()
+        .select(["Transported"])
+        .mean()
+        .unwrap()
+        .sort(&["Transported_mean"], vec![false, true], false)
+        .unwrap();
+
+    let cabin_2 = train_df
+        .group_by(&["Cabin_2"])
+        .unwrap()
+        .select(["Transported"])
+        .mean()
+        .unwrap()
+        .sort(&["Transported_mean"], vec![false, true], false)
+        .unwrap();
+
+    let cabin_3 = train_df
+        .group_by(&["Cabin_3"])
+        .unwrap()
+        .select(["Transported"])
+        .mean()
+        .unwrap()
+        .sort(&["Transported_mean"], vec![false, true], false)
+        .unwrap();
+
+    println!("Cabin_1::::{}", cabin_1);
+    println!("Cabin_2::::{}", cabin_2);
+    println!("Cabin_3::::{}", cabin_3);
+
+    let train_cabin_1 = train_df
+        .select(["Cabin_1"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+
+    let test_cabin_1 = test_df
+        .select(["Cabin_1"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+    let train_df = train_df.hstack(train_cabin_1.get_columns()).unwrap();
+    let test_df = test_df.hstack(test_cabin_1.get_columns()).unwrap();
+
     /*==================필요없는 값 삭제========================= */
 
-    let train_df = train_df.drop_many(&["PassengerId", "Name", "Cabin"]);
-    let test_df = test_df.drop_many(&["PassengerId", "Name", "Cabin"]);
+    let train_df = train_df.drop_many(&[
+        "PassengerId",
+        "Name",
+        "Cabin",
+        "Cabin_1",
+        "Cabin_3",
+        "Cabin_1_T",
+        "Cabin_1_E",
+        "Cabin_1_D",
+        "Cabin_1_F",
+        "Cabin_1_A",
+        "Cabin_1_G",
+    ]);
+    let test_df = test_df.drop_many(&[
+        "PassengerId",
+        "Name",
+        "Cabin",
+        "Cabin_1",
+        "Cabin_3",
+        "Cabin_1_T",
+        "Cabin_1_E",
+        "Cabin_1_D",
+        "Cabin_1_F",
+        "Cabin_1_A",
+        "Cabin_1_G",
+    ]);
 
     /*==================Vip========================= */
     let vip_result = train_df
@@ -223,8 +290,9 @@ pub fn main() {
         .select(["Transported"])
         .mean()
         .unwrap()
-        .sort(&["Transported_mean"], vec![false, true], false).unwrap();
-        println!("{}",vip_result);
+        .sort(&["Transported_mean"], vec![false, true], false)
+        .unwrap();
+    println!("{}", vip_result);
     let vip_arrived = train_df
         .clone()
         .lazy()
@@ -236,20 +304,18 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
     let vip_not_arrived = train_df
-    .clone()
-    .lazy()
-    .filter(col("Transported").eq(false))
-    .collect()
-    .unwrap()
-    .column("VIP")
-    .unwrap()
-    .value_counts(true, false)
-    .unwrap();
-    println!("{}",vip_arrived);
-    println!("{}",vip_not_arrived);
+        .clone()
+        .lazy()
+        .filter(col("Transported").eq(false))
+        .collect()
+        .unwrap()
+        .column("VIP")
+        .unwrap()
+        .value_counts(true, false)
+        .unwrap();
     //VIP 삭제
-    let train_df: DataFrame= train_df.drop("VIP").unwrap();
-    let test_df: DataFrame= test_df.drop("VIP").unwrap();
+    let train_df: DataFrame = train_df.drop("VIP").unwrap();
+    let test_df: DataFrame = test_df.drop("VIP").unwrap();
 
     /*==================CryoSleep========================= */
 
@@ -259,8 +325,8 @@ pub fn main() {
         .select(["Transported"])
         .mean()
         .unwrap();
-    println!("CryoSleep::{}",cryosleep_result);
-    
+    println!("CryoSleep::{}", cryosleep_result);
+
     let cryosleep_arrived = train_df
         .clone()
         .lazy()
@@ -281,8 +347,8 @@ pub fn main() {
         .unwrap()
         .value_counts(true, false)
         .unwrap();
-    println!("Cryosleep Arrived::{}",cryosleep_arrived);
-    println!("Cryosleep Not Arrived::{}",cryosleep_not_arrived);
+    println!("Cryosleep Arrived::{}", cryosleep_arrived);
+    println!("Cryosleep Not Arrived::{}", cryosleep_not_arrived);
 
     /*==================HomePlanet========================= */
     let homeplanet_result = train_df
@@ -317,9 +383,28 @@ pub fn main() {
         .unwrap();
     println!("HomePlanet Arrived::{}", homeplanet_arrived);
     println!("HomePlanet Not Arrived::{}", homeplanet_not_arrived);
-    let train_df: DataFrame= train_df.drop("HomePlanet").unwrap();
-    let test_df: DataFrame= test_df.drop("HomePlanet").unwrap();
 
+    let home_planet_dummies = train_df
+        .select(["HomePlanet"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+
+    let home_planet_test_dummies = test_df
+        .select(["HomePlanet"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+
+    let train_df = train_df.hstack(home_planet_dummies.get_columns()).unwrap();
+    let test_df = test_df
+        .hstack(home_planet_test_dummies.get_columns())
+        .unwrap();
+
+    let train_df: DataFrame =
+        train_df.drop_many(&["HomePlanet", "HomePlanet_Earth", "HomePlanet_Mars"]);
+    let test_df: DataFrame =
+        test_df.drop_many(&["HomePlanet", "HomePlanet_Earth", "HomePlanet_Mars"]);
 
     // /*==================Destination========================= */
     let destination_result = train_df
@@ -330,7 +415,6 @@ pub fn main() {
         .unwrap()
         .sort(&["Transported_mean"], vec![false, true], false)
         .unwrap();
-    println!("{}", destination_result);
 
     let destination_arrived = train_df
         .clone()
@@ -353,12 +437,12 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
 
-    println!("{}", destination_result);
+    println!("Destination::{}", destination_result);
     println!("Destination Arrived::{}", destination_arrived);
     println!("Destination Not Arrived::{}", destination_not_arrived);
     //중요하지 않으니 삭제
-    let train_df: DataFrame= train_df.drop("Destination").unwrap();
-    let test_df: DataFrame= test_df.drop("Destination").unwrap();
+    let train_df: DataFrame = train_df.drop("Destination").unwrap();
+    let test_df: DataFrame = test_df.drop("Destination").unwrap();
 
     /*==================Age========================= */
 
@@ -388,24 +472,16 @@ pub fn main() {
     println!("{}", train_df);
     println!("{}", train_df.column("Age").unwrap());
 
-
     let age_result = train_df
-    .group_by(&["Age"])
-    .unwrap()
-    .select(["Transported"])
-    .mean()
-    .unwrap()
-    .sort(&["Transported_mean"], vec![false, true], false)
-    .unwrap();
-    let  train_df= train_df.drop("Age").unwrap();
-    let  test_df= test_df.drop("Age").unwrap();
-
-    /*Cabin1 */
-    let  train_df= train_df.drop_many(&["Cabin_1","Cabin_2","Cabin_3"]);
-    let  test_df= test_df.drop_many(&["Cabin_1","Cabin_2","Cabin_3"]);
-
-    println!("ttt{}",test_df);
-
+        .group_by(&["Age"])
+        .unwrap()
+        .select(["Transported"])
+        .mean()
+        .unwrap()
+        .sort(&["Transported_mean"], vec![false, true], false)
+        .unwrap();
+    let train_df = train_df.drop("Age").unwrap();
+    let test_df = test_df.drop("Age").unwrap();
 
     /*===================processing========================= */
 
@@ -417,11 +493,12 @@ pub fn main() {
         .unwrap();
 
     let submission_df: DataFrame = submission_df
-    .clone()
-    .lazy()
-    .with_columns([col("Transported").cast(DataType::Float64)])
-    .collect()
-    .unwrap();
+        .clone()
+        .lazy()
+        .with_columns([col("Transported").cast(DataType::Float64)])
+        .collect()
+        .unwrap();
+
     let y_train: Vec<f64> = train_df
         .column("Transported")
         .unwrap()
@@ -429,16 +506,16 @@ pub fn main() {
         .unwrap()
         .into_no_null_iter()
         .collect();
+    let train_df = train_df.drop("Transported").unwrap();
     let y_train: Vec<i32> = y_train.into_iter().map(|x| x as i32).collect();
     let y_test: Vec<f64> = submission_df
-    .column("Transported")
-    .unwrap()
-    .f64()
-    .unwrap()
-    .into_no_null_iter()
-    .collect();
+        .column("Transported")
+        .unwrap()
+        .f64()
+        .unwrap()
+        .into_no_null_iter()
+        .collect();
     let y_test: Vec<i32> = y_test.into_iter().map(|x| x as i32).collect();
-
 
     let x_train = train_df
         .to_ndarray::<Float64Type>(IndexOrder::Fortran)
@@ -449,7 +526,10 @@ pub fn main() {
         x_train_vec.push(row_vec);
     }
 
-    let x_test: ndarray::prelude::ArrayBase<ndarray::OwnedRepr<f64>, ndarray::prelude::Dim<[usize; 2]>> = test_df
+    let x_test: ndarray::prelude::ArrayBase<
+        ndarray::OwnedRepr<f64>,
+        ndarray::prelude::Dim<[usize; 2]>,
+    > = test_df
         .to_ndarray::<Float64Type>(IndexOrder::Fortran)
         .unwrap();
     let mut x_test_vec: Vec<Vec<_>> = Vec::new();
@@ -461,69 +541,61 @@ pub fn main() {
 
     let x_train = DenseMatrix::from_2d_vec(&x_train_vec);
     let x_test: DenseMatrix<f64> = DenseMatrix::from_2d_vec(&x_test_vec);
+    println!("{:?}", test_df.schema());
 
-    let pca_x_train: PCA<f64, DenseMatrix<f64>> =
-        PCA::fit(&x_train, PCAParameters::default().with_n_components(6)).unwrap(); // Reduce number of features to 2
+    let pca_x_train: PCA<f64, DenseMatrix<f64>> = PCA::fit(
+        &x_train,
+        PCAParameters::default().with_n_components(train_df.shape().1),
+    )
+    .unwrap(); // Reduce number of features to 2
 
     let pca_x_train = pca_x_train.transform(&x_train).unwrap();
 
-    let pca_x_test: PCA<f64, DenseMatrix<f64>> =
-        PCA::fit(&x_test, PCAParameters::default().with_n_components(6)).unwrap(); // Reduce number of features to 2
+    let pca_x_test: PCA<f64, DenseMatrix<f64>> = PCA::fit(
+        &x_test,
+        PCAParameters::default().with_n_components(test_df.shape().1),
+    )
+    .unwrap(); // Reduce number of features to 2
     let pca_x_test = pca_x_test.transform(&x_test).unwrap();
 
-    // /*===================test========================= */
+    /*===================model========================= */
 
     let pca_model =
         RandomForestClassifier::fit(&pca_x_train, &y_train, Default::default()).unwrap();
     let y_hat: Vec<i32> = pca_model.predict(&pca_x_test).unwrap(); // use the same data for prediction
     let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&y_test, &y_hat);
-    println!("{}",acc);
-    // /*===================model========================= */
+    println!("{}", acc);
     // /*===================제출용 파일========================= */
 
-    // //random forest 가 가장 빠르기 때문에
+    //random forest 가 가장 빠르기 때문에
 
-    // let survived_series = Series::new("Transported", y_hat.into_iter().collect::<Vec<i32>>())
-    //     .cast(&DataType::Boolean)
-    //     .unwrap();
-    // let passenger_id_series = result_id_df.clone();
+    let transported_series = Series::new("Transported", y_hat.into_iter().collect::<Vec<i32>>())
+        .cast(&DataType::Boolean)
+        .unwrap();
+    let passenger_id_series = submission_df.column("PassengerId").unwrap().clone();
+    
+    let  df: DataFrame = DataFrame::new(vec![passenger_id_series, transported_series]).unwrap();
 
-    // let  df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
+    let  df = df
+        .clone()
+        .lazy()
+        .with_columns([col("Transported").cast(DataType::String)])
+        .collect()
+        .unwrap();
 
-    // let  df = df
-    //     .clone()
-    //     .lazy()
-    //     .with_columns([col("Transported").cast(DataType::String)])
-    //     .collect()
-    //     .unwrap();
+    let mut df = df
+        .clone()
+        .lazy()
+        .with_columns([when(col("Transported").eq(lit("true")))
+            .then(lit("True"))
+            .otherwise(lit("False"))
+            .alias("Transported")])
+        .collect()
+        .unwrap();
+    let mut output_file: File = File::create("./datasets/spaceship-titanic/out.csv").unwrap();
 
-    // let mut df = df
-    //     .clone()
-    //     .lazy()
-    //     .with_columns([when(col("Transported").eq(lit("true")))
-    //         .then(lit("True"))
-    //         .otherwise(lit("False"))
-    //         .alias("Transported")])
-    //     .collect()
-    //     .unwrap();
-    // let mut output_file: File = File::create("./datasets/spaceship-titanic/out.csv").unwrap();
-
-    // CsvWriter::new(&mut output_file)
-    //     // .has_header(true)
-    //     .finish(&mut df)
-    //     .unwrap();
-
-    /*===================result========================= */
+    CsvWriter::new(&mut output_file)
+        // .has_header(true)
+        .finish(&mut df)
+        .unwrap();
 }
-/*==========result_data================ */
-// let result_df = result_df
-// .clone()
-// .lazy()
-// .with_columns([col("Transported").cast(DataType::Float64)])
-// .collect()
-// .unwrap();
-// let result_id_df: &Series = result_df.column(&"PassengerId").unwrap();
-  // let result_df: &Series = result_df.column(&"Transported").unwrap();
-
-    // let result_train: Vec<f64> = result_df.f64().unwrap().into_no_null_iter().collect();
-    // let result_train: Vec<i32> = result_train.iter().map(|x| *x as i32).collect();
