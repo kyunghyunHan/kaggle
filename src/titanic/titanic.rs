@@ -57,11 +57,12 @@ pub fn main() {
         .collect()
         .unwrap()
         .drop_many(&["Cabin"]);
-    //범주형 먼저 처리
-    /*Pclass */
+
     println!("중간점검:{:?}", train_df.tail(Some(3)));
     println!("null확인:{}", train_df.null_count());
     println!("null확인:{}", test_df.null_count());
+    //범주형 먼저 처리
+    /*Pclass */
     /*One hot encoding */
     //dummies만들기
     let pclass_train_dummies: DataFrame = train_df
@@ -85,6 +86,7 @@ pub fn main() {
         .unwrap()
         .drop(&"Pclass")
         .unwrap();
+  
     /*sex */
     let sex_train_dummies: DataFrame = train_df
         .select(["Sex"])
@@ -128,7 +130,7 @@ pub fn main() {
         .unwrap()
         .drop(&"Embarked")
         .unwrap();
-
+    println!("{}",train_df.tail(Some(3)));
     /*data 변환 */
     //target_data
     let y_train = train_df.column("Survived").unwrap();
