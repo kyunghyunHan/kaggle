@@ -13,7 +13,7 @@ use std::fs::File;
 pub fn main() {
     /*===================data 불러오기========================= */
 
-    let mut train_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/train.csv")
+    let train_df: DataFrame = CsvReader::from_path("./datasets/spaceship-titanic/train.csv")
         .unwrap()
         .finish()
         .unwrap();
@@ -31,11 +31,31 @@ pub fn main() {
     println!("데이터 정보 확인:{:?}", train_df.schema());
     println!("데이터 미리보기:{}", test_df.head(None));
     println!("데이터 정보 확인:{:?}", test_df.schema());
-
     println!("결측치 확인:{:?}", train_df.null_count());
-    // println!("수치형 데이터 확인:{:?}",train_df.describe(None).unwrap());
 
-    // println!("범주형 데이터 확인:{:?}",train_df.describe(Some(&[0f64])).unwrap());
+    /*================결측치 확인 후 결측치 채우기================ */
+    let train_df = train_df
+        .clone()
+        .lazy()
+        .with_columns([
+            col("CryoSleep").cast(DataType::Float64).fill_null(0),
+            col("VIP").cast(DataType::Float64).fill_null(0),
+            col("Cabin").fill_null(lit("G/734/S")),
+            col("HomePlanet").fill_null(lit("Earth")),
+            col("Destination").fill_null(lit("TRAPPIST-1e")),
+            col("ShoppingMall").fill_null(col("ShoppingMall").median()),
+            col("VRDeck").fill_null(col("VRDeck").median()),
+            col("FoodCourt").fill_null(col("FoodCourt").median()),
+            col("Spa").fill_null(col("Spa").median()),
+            col("RoomService").fill_null(col("RoomService").median()),
+            col("Age").fill_null(col("Age").median()),
+        ])
+        .collect()
+        .unwrap();
+
+    
+    /*===================히스토그램 그리기========================= */
+
     let age_data: Vec<f64> = train_df
         .column("Age")
         .unwrap()
@@ -79,8 +99,6 @@ pub fn main() {
         .into_no_null_iter()
         .collect();
 
-    /*===================data 불러오기========================= */
-    /*===================히스토그램 그리기========================= */
     let root =
         BitMapBackend::new("./src/spaceship_titanic/histogram.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE).unwrap();
@@ -116,28 +134,6 @@ pub fn main() {
             .unwrap();
     }
 
-    /*===================히스토그램 그리기========================= */
-
-    /*===================processing========================= */
-
-    let train_df = train_df
-        .clone()
-        .lazy()
-        .with_columns([
-            col("CryoSleep").cast(DataType::Float64).fill_null(0),
-            col("VIP").cast(DataType::Float64).fill_null(0),
-            col("Cabin").fill_null(lit("G/734/S")),
-            col("HomePlanet").fill_null(lit("Earth")),
-            col("Destination").fill_null(lit("TRAPPIST-1e")),
-            col("ShoppingMall").fill_null(col("ShoppingMall").median()),
-            col("VRDeck").fill_null(col("VRDeck").median()),
-            col("FoodCourt").fill_null(col("FoodCourt").median()),
-            col("Spa").fill_null(col("Spa").median()),
-            col("RoomService").fill_null(col("RoomService").median()),
-            col("Age").fill_null(col("Age").median()),
-        ])
-        .collect()
-        .unwrap();
     let train_df = train_df
         .clone()
         .lazy()
@@ -242,15 +238,17 @@ pub fn main() {
         .unwrap()
         .value_counts(true, false)
         .unwrap();
+
+    println!("{}",cryosleep_arrived);
     let cryosleep_arrived_vec: Vec<u32> = cryosleep_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
         .into_no_null_iter()
         .collect();
     let cryosleep_not_arrived_vec: Vec<u32> = cryosleep_not_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
@@ -337,14 +335,14 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
     let homeplanet_arrived_vec: Vec<u32> = homeplanet_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
         .into_no_null_iter()
         .collect();
     let homeplanet_not_arrived_vec: Vec<u32> = homeplanet_not_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
@@ -383,14 +381,14 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
     let destination_arrived_vec: Vec<u32> = destination_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
         .into_no_null_iter()
         .collect();
     let destination_not_arrived_vec: Vec<u32> = destination_not_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
@@ -447,14 +445,14 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
     let age_arrived_vec: Vec<u32> = age_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
         .into_no_null_iter()
         .collect();
     let age_not_arrived_vec: Vec<u32> = age_not_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
@@ -485,14 +483,14 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
     let cabin_1_arrived_vec: Vec<u32> = cabin_1_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
         .into_no_null_iter()
         .collect();
     let cabin_1_not_arrived_vec: Vec<u32> = cabin_1_not_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
@@ -522,14 +520,14 @@ pub fn main() {
         .value_counts(true, false)
         .unwrap();
     let cabin_3_arrived_vec: Vec<u32> = cabin_3_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()
         .into_no_null_iter()
         .collect();
     let cabin_3_not_arrived_vec: Vec<u32> = cabin_3_not_arrived
-        .column("counts")
+        .column("count")
         .unwrap()
         .u32()
         .unwrap()

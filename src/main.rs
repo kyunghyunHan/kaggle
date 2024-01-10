@@ -7,9 +7,9 @@ mod price_prediction_for_used_cars;
 mod predict_co2_emissions_in_rwanda;
 mod forecasting_mini_cource_sales;
 fn main() {
-    titanic::titanic::main();
+    // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();
-    // spaceship_titanic::model::main();
+    spaceship_titanic::model::main();
     // house_price::model::main();
     // store_sales::model::main();
     // binary_classification_with_a_bank_churn_dataset::model::main();
