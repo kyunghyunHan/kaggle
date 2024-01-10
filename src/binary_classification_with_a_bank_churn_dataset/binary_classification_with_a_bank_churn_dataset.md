@@ -17,11 +17,51 @@
 - Exited: Whether 고객이 이탈했는지 여부(1 = 예, 0 = 아니요)
 
 
-## 
-
-- 이진분류 로지스틱회귀,랜덤포레스트,앙상블
-
-
 ## data 확인
+- 범주형:Surname(명목형),Geography(명목형),Gender(명목형),HasCrCard(명목형),IsActiveMember(명목형)
+- 수치형:CreditScore(이산형),Age(연속형),Tenure(이산형),NumOfProducts(이산형),EstimatedSalary(연속형)
+
+## 결측치 확인
+- 없음
+
+## Surname
+- 필요 없으므로 drop
+
+## CreditScore
 
 
+## Geography
+```
+Geography:::::shape: (3, 2)
+┌───────────┬─────────────┐
+│ Geography ┆ Exited_mean │
+│ ---       ┆ ---         │
+│ str       ┆ f64         │
+╞═══════════╪═════════════╡
+│ France    ┆ 0.165282    │
+│ Spain     ┆ 0.172176    │
+│ Germany   ┆ 0.378952    │
+└───────────┴─────────────┘
+```
+- Germany에 사는 사람이 이탈을 많이 함
+
+## Gender
+
+```
+Gender::::::shape: (2, 2)
+┌────────┬─────────────┐
+│ Gender ┆ Exited_mean │
+│ ---    ┆ ---         │
+│ str    ┆ f64         │
+╞════════╪═════════════╡
+│ Male   ┆ 0.159055    │
+│ Female ┆ 0.279687    │
+└────────┴─────────────┘
+```
+- 남성보다 여성이 더 이탈을 마니함
+
+## IsActiveMember
+
+## HasCrCard
+
+## NumOfProducts
