@@ -60,7 +60,7 @@ pub fn main() {
         .collect()
         .unwrap()
         .drop_many(&["Cabin"]);
-    //범주형 먼저 처
+    //범주형 먼저 처리
     /*Pclass */
     println!("중간점검:{:?}", train_df.tail(Some(3)));
     println!("null확인:{}", train_df.null_count());
