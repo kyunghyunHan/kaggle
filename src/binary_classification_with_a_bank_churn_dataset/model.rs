@@ -35,8 +35,28 @@ pub fn main() {
         .unwrap()
         .sort(&["Exited_mean"], vec![false, true], false)
         .unwrap();
-
     println!("Geography:::::{}", geography_data);
+    let geography_train_dummies: DataFrame = train_df
+        .select(["Geography"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+    let geography_test_dummies: DataFrame = test_df
+        .select(["Geography"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+
+    let train_df: DataFrame = train_df
+        .hstack(geography_train_dummies.get_columns())
+        .unwrap()
+        .drop_many(&["Geography_France", "Geography_Spain", "Geography"]);
+
+    let test_df : DataFrame = test_df
+        .hstack(geography_train_dummies.get_columns())
+        .unwrap()
+        .drop_many(&["Geography_France", "Geography_Spain", "Geography"]);
+    println!("Geography:::::{}", train_df);
 
     /*============Gender=========== */
     let gender_data = train_df
