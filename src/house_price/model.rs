@@ -352,7 +352,7 @@ pub fn main() {
     /*===================LinearRegression========================= */
     /*===================xgboost========================= */
     println!("{:?}", result_df.shape());
-    let b = result_df.into_shape(1460 * 2).unwrap();
+    let b: ArrayBase<ndarray::OwnedRepr<f32>, Dim<[usize; 1]>> = result_df.into_shape(1460 * 2).unwrap();
     let x_train: Vec<f32> = b.into_iter().collect();
 
     let num_rows = 1460;
