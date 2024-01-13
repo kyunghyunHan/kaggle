@@ -30,9 +30,7 @@ pub fn main() {
             .finish()
             .unwrap();
 
-    println!("{:?}",train_df.shape());
-    println!("{:?}",test_df.shape());
-    println!("{:?}",train_labels_df.shape());
+    
 
 
    /*======model====== */
