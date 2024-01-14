@@ -21,3 +21,6 @@ linfa-linear = "0.7.0"
 linfa-logistic = "0.7.0"
 
 xgboost = "0.1.4"
+
+burn = "0.11.1"
+serde = "1.0.193"

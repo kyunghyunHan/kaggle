@@ -8,6 +8,7 @@ mod predict_co2_emissions_in_rwanda;
 mod forecasting_mini_cource_sales;
 mod data_science_london;
 mod icr_identifying_age_related_conditions;
+mod digit_recognizer;
 fn main() {
     // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();
@@ -18,6 +19,6 @@ fn main() {
     // predict_co2_emissions_in_rwanda::model::main();
     // forecasting_mini_cource_sales::model::main();
     // data_science_london::model::main();
-    icr_identifying_age_related_conditions::model::main();
-    
+    // icr_identifying_age_related_conditions::model::main();
+    digit_recognizer::model::main();
 }
