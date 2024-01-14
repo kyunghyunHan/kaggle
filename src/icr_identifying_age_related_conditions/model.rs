@@ -17,6 +17,14 @@ pub fn main() {
 
     println!("{}", train_df);
     println!("{:?}",train_df.schema());
+    println!("{}",train_df.head(None));
+    println!("{}",train_df.null_count());
+
+    /*==========null 값 채우기 =======*/
+    let train_df= train_df.fill_null(FillNullStrategy::Mean).unwrap(); 
+    let test_df= test_df.fill_null(FillNullStrategy::Mean).unwrap(); 
+
+    println!("{}",train_df.null_count());
 
     /*======processing======= */
 
