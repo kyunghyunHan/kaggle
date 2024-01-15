@@ -22,5 +22,5 @@ linfa-logistic = "0.7.0"
 
 xgboost = "0.1.4"
 
-burn = "0.11.1"
+burn = { version = "0.11.1", features = ["wgpu", "train"] }
 serde = "1.0.193"
