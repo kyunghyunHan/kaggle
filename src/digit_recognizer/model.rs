@@ -236,7 +236,7 @@ pub fn main(){
     let device = burn::backend::wgpu::WgpuDevice::default();
     train::<MyAutodiffBackend>(
         "./src/digit_recognizer/data",
-        TrainingConfig::new(ModelConfig::new(10, 512), AdamConfig::new()).with_num_workers(16),
+        TrainingConfig::new(ModelConfig::new(1, 512), AdamConfig::new()).with_num_workers(1),
         device,
     );
 

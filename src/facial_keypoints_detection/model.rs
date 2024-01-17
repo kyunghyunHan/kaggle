@@ -46,8 +46,7 @@ use image::GenericImageView;
 use std::fmt; use std::marker::PhantomData;
 use serde::de::Error;
 use burn::data::dataset::SqliteDataset;
-type MappedDataset = MapperDataset<InMemDataset<DiabetesPatientRaw>, BytesToImage, DiabetesPatientRaw>;
-
+use polars::prelude::*;
 #[macro_use]
 
 const WIDTH: usize = 96; // Update with the correct width
@@ -120,47 +119,67 @@ const HEIGHT: usize = 96; // Update with the correct height
 // }
 
 
-
-#[derive(Debug, PartialEq, Clone)]
+#[derive(Debug, PartialEq,Clone)]
 struct DiabetesPatient {
-
-    pub label:usize,
-    pub image: [[f32; 96];96],
+    label: i64,
+    // #[serde(deserialize_with = "deserialize_image")]
+    pub image:[[f32;WIDTH];WIDTH],
 }
+// fn deserialize_image<'de, D>(deserializer: D) -> Result<[[i64; 3]; 1], D::Error>
+// where
+//     D: serde::Deserializer<'de>,
+// {
+//     // 펼쳐진 표현을 1D 배열로 역직렬화
+//     let flat_image: Vec<i64> = Deserialize::deserialize(deserializer)?;
+
+//     // 1D 배열을 2D 배열로 변환
+//     let mut image = [[0i64; 3]; 1];
+//     for (i, &value) in flat_image.iter().enumerate() {
+//         image[0][i] = value;
+//     }
+
+//     Ok(image)
+// }
+// #[derive(Debug, PartialEq, Clone)]
+// struct DiabetesPatient {
+
+//     pub label:usize,
+//     pub image: [[f32; WIDTH];WIDTH],
+// }
 
 #[derive(Serialize, Deserialize,Clone)]
 struct DiabetesPatientRaw {
     pub label: usize,
-    pub image:Vec<u8>,
+    pub image:Vec<f32>,
 }
 
-struct BytesToImage;
 
-impl Mapper<DiabetesPatientRaw, DiabetesPatient> for BytesToImage {
-    fn map(&self, item: &DiabetesPatientRaw) -> DiabetesPatient {
-        let image: image::DynamicImage = image::load_from_memory(&item.image).unwrap();
-        let image = image.to_luma8();
-        println!("{}",1);
+// impl Mapper<DiabetesPatientRaw, DiabetesPatient> for BytesToImage {
+//     fn map(&self, item: &DiabetesPatientRaw) -> DiabetesPatient {
+//         let image: image::DynamicImage = image::load_from_memory(&item.image).unwrap();
+//         let image = image.to_luma8();
+//         println!("{}",1);
 
-        // Ensure the image dimensions are correct.
-        debug_assert_eq!(image.dimensions(), (WIDTH as u32, HEIGHT as u32));
-        println!("{}",1);
-        let mut image_array = [[0f32; WIDTH]; HEIGHT];
-        for (i, pixel) in image.as_raw().iter().enumerate() {
-            let x = i % WIDTH;
-            let y = i / HEIGHT;
-            image_array[y][x] = *pixel as f32;
-        }
-        DiabetesPatient {
-            image: image_array,
-            label: item.label,
-        }
-    }
-}
+//         // Ensure the image dimensions are correct.
+//         debug_assert_eq!(image.dimensions(), (WIDTH as u32, HEIGHT as u32));
+//         println!("{}",1);
+//         let mut image_array = [[0f32; WIDTH]; HEIGHT];
+//         for (i, pixel) in image.as_raw().iter().enumerate() {
+//             let x = i % WIDTH;
+//             let y = i / HEIGHT;
+//             image_array[y][x] = *pixel as f32;
+//         }
+//         DiabetesPatient {
+//             image: image_array,
+//             label: item.label,
+//         }
+//     }
+// }
 
 /*데이터 셋 구조체 */
+#[derive(Debug)]
 pub struct DiabetesDataset {
-    dataset: MappedDataset,
+    dataset: Vec<DiabetesPatient>,
 }
 
 
@@ -186,8 +205,8 @@ Tensor<B, 3, Bool> // Bool tensor
 */
 #[derive(Module, Debug)]//딥러닝 모듈생성
 pub struct Model<B: Backend> {//BackEnd:새모델이 모든 벡엔드에서 실행할수 있게함
-    // conv1: Conv2d<B>,
-    // conv2: Conv2d<B>,
+    conv1: Conv2d<B>,
+    conv2: Conv2d<B>,
     pool: AdaptiveAvgPool2d,
     dropout: Dropout,
     linear1: Linear<B>,
@@ -198,24 +217,24 @@ pub struct Model<B: Backend> {//BackEnd:새모델이 모든 벡엔드에서 실�
 /* Model method */
 impl<B: Backend> Model<B> {
   
-    pub fn forward(&self, images: Tensor<B, 1>) -> Tensor<B, 2> {
+    pub fn forward(&self, images: Tensor<B, 3>) -> Tensor<B, 2> {
 
         
-        let [batch_size] = images.dims();
+        let [batch_size, height, width] = images.dims();
 
         // Create a channel at the second dimension.
-        let x = images.reshape([batch_size,  1]);
+        let x = images.reshape([batch_size, 1, height, width]);
 
 
         
-        // let x = self.conv1.forward(x); // [batch_size, 8, _, _]
+        let x = self.conv1.forward(x); // [batch_size, 8, _, _]
         let x = self.dropout.forward(x);
-        // let x = self.conv2.forward(x); // [batch_size, 16, _, _]
+        let x = self.conv2.forward(x); // [batch_size, 16, _, _]
         let x = self.dropout.forward(x);
         let x = self.activation.forward(x);
         /*채널, */                 
-        // let x = self.pool.forward(x); // [batch_size, 16, 8, 8]
-        let x = x.reshape([batch_size, 1 ]);
+        let x = self.pool.forward(x); // [batch_size, 16, 8, 8]
+        let x = x.reshape([batch_size, 16 * 8 * 8]);
         let x = self.linear1.forward(x);
         let x = self.dropout.forward(x);
         let x = self.activation.forward(x);
@@ -226,7 +245,7 @@ impl<B: Backend> Model<B> {
 
     pub fn forward_classification(
         &self,
-        images: Tensor<B,1>,
+        images: Tensor<B,3>,
         targets: Tensor<B, 1, Int>,
     ) -> ClassificationOutput<B> {
         let output = self.forward(images);
@@ -248,17 +267,23 @@ pub struct ModelConfig {
 }
 impl DiabetesDataset {
     pub fn new() -> Self {
-        let path = Path::new(file!()).parent().unwrap().parent().unwrap().join("../datasets/facial-keypoints-detection/test.csv");
+        let tf= CsvReader::from_path("./datasets/facial-keypoints-detection/test.csv").unwrap().finish().unwrap();
+        let date_data:Vec<Vec<f32>>= tf.column("image").unwrap().str().unwrap().into_iter().map(|x|x.unwrap().trim()
+        .split_whitespace()
+        .map(|num_str| num_str.parse::<f32>().unwrap())
+        .collect::<Vec<f32>>()).collect();
+        let label:Vec<i64>= tf.column(&"label").unwrap().i64().unwrap().into_no_null_iter().collect();
+  
+      //3차원배열로만들어야함
+        let mut bb: Vec<DiabetesPatient>= Vec::new();
+        // let mut two_dimensional_array: [[f32; WIDTH]; WIDTH] =[[0.0; WIDTH]; WIDTH] ;
+     
+        for k in 0..label.len(){
+            let two_dimensional_array = vec_to_2d_array(date_data[k].clone());
 
-        // Build dataset from csv with tab ('\t') delimiter
-        println!("{}",1);
-
-        let dataset = InMemDataset::from_csv(path).expect("dada");
-        println!("{}",1);
-
-        let dataset = MapperDataset::new(dataset, BytesToImage);
-
-        Self{dataset}
+            bb.push(DiabetesPatient{label:label[k],image:two_dimensional_array});
+        }        
+        DiabetesDataset{dataset:bb}
     }
 }
 
@@ -277,7 +302,7 @@ impl DiabetesDataset {
 
 impl<B: AutodiffBackend> TrainStep<Test<B>, ClassificationOutput<B>> for Model<B> {
     fn step(&self, batch: Test<B>) -> TrainOutput<ClassificationOutput<B>> {
-        let item = self.forward_classification(batch.widths, batch.targets);
+        let item = self.forward_classification(batch.images, batch.targets);
 
         TrainOutput::new(self, item.loss.backward(), item)
     }
@@ -285,7 +310,7 @@ impl<B: AutodiffBackend> TrainStep<Test<B>, ClassificationOutput<B>> for Model<B
 
 impl<B: Backend> ValidStep<Test<B>, ClassificationOutput<B>> for Model<B> {
     fn step(&self, batch: Test<B>) -> ClassificationOutput<B> {
-        self.forward_classification(batch.widths, batch.targets)
+        self.forward_classification(batch.images, batch.targets)
     }
 }
 
@@ -296,24 +321,24 @@ impl ModelConfig {
         Model {
             //커널 크기 3사용
             //채널 1에서 8로 확장
-            // conv1: Conv2dConfig::new([1, 8], [3, 3]).init(),
+            conv1: Conv2dConfig::new([1, 8], [3, 3]).init(),
             // //8에서 16으로 확장
-            // conv2: Conv2dConfig::new([8, 16], [3, 3]).init(),
+            conv2: Conv2dConfig::new([8, 16], [3, 3]).init(),
             //적응형 평균 폴링 모듈을 사용 이미지의 차원을 8x8으로 축소
             pool: AdaptiveAvgPool2dConfig::new([8, 8]).init(),
             activation: ReLU::new(),
-            linear1: LinearConfig::new(1, self.hidden_size).init(),
+            linear1: LinearConfig::new(16 * 8 * 8, self.hidden_size).init(),
             linear2: LinearConfig::new(self.hidden_size, self.num_classes).init(),
             dropout: DropoutConfig::new(self.dropout).init(),
         }
     }
     pub fn init_with<B: Backend>(&self, record: ModelRecord<B>) -> Model<B> {
         Model {
-            // conv1: Conv2dConfig::new([1, 8], [3, 3]).init_with(record.conv1),
-            // conv2: Conv2dConfig::new([8, 16], [3, 3]).init_with(record.conv2),
+            conv1: Conv2dConfig::new([1, 8], [3, 3]).init_with(record.conv1),
+            conv2: Conv2dConfig::new([8, 16], [3, 3]).init_with(record.conv2),
             pool: AdaptiveAvgPool2dConfig::new([8, 8]).init(),
             activation: ReLU::new(),
-            linear1: LinearConfig::new(1, self.hidden_size).init_with(record.linear1),
+            linear1: LinearConfig::new(16 * 8 * 8, self.hidden_size).init_with(record.linear1),
             linear2: LinearConfig::new(self.hidden_size, self.num_classes)
                 .init_with(record.linear2),
             dropout: DropoutConfig::new(self.dropout).init(),
@@ -341,27 +366,40 @@ impl<B: Backend> Tester<B> {
 
 #[derive(Clone, Debug)]
 pub struct Test<B: Backend> {
-    pub widths: Tensor<B, 1>,
+    pub images: Tensor<B, 3>,
     pub targets: Tensor<B, 1, Int>,
 }
+impl Dataset<DiabetesPatient> for DiabetesDataset {
+    fn get(&self, index: usize) -> Option<DiabetesPatient> {
+        self.dataset.get(index).cloned()
+    }
 
-// impl<B: Backend> Batcher<DiabetesPatient, Test<B>> for Tester<B> {
-//     fn batch(&self, items: Vec<DiabetesPatient>) -> Test<B> {
-//         let widths = items
-//         .iter()
-//         .map(|item| Tensor::<B, 1>::from_data(Data::from([(item.width as f64).elem()])))
-//         .collect();
-//         let targets = items
-//             .iter()
-//             .map(|item| Tensor::<B, 1, Int>::from_data(Data::from([(item.height as i64).elem()])))
-//             .collect();
+    fn len(&self) -> usize {
+        self.dataset.len()
+    }
+}
+impl<B: Backend> Batcher<DiabetesPatient, Test<B>> for Tester<B> {
+    fn batch(&self, items: Vec<DiabetesPatient>) -> Test<B> {
+        let images = items
+            .iter()
+            .map(|item| Data::<f32, 2>::from(item.image))
+            .map(|data| Tensor::<B, 2>::from_data(data.convert()))
+            .map(|tensor| tensor.reshape([1, WIDTH, WIDTH]))
+        
+            .map(|tensor| ((tensor / 255) - 0.1307) / 0.3081)
+            .collect();
 
-//         let widths = Tensor::cat(widths, 0).to_device(&self.device);
-//         let targets = Tensor::cat(targets, 0).to_device(&self.device);
+        let targets = items
+            .iter()
+            .map(|item| Tensor::<B, 1, Int>::from_data(Data::from([(item.label as i64).elem()])))
+            .collect();
 
-//         Test { widths, targets }
-//     }
-// }
+        let images = Tensor::cat(images, 0).to_device(&self.device);
+        let targets = Tensor::cat(targets, 0).to_device(&self.device);
+
+        Test { images, targets }
+    }
+}
 #[derive(Config)]
 pub struct TrainingConfig {
     pub model: ModelConfig,
@@ -378,61 +416,61 @@ pub struct TrainingConfig {
     pub learning_rate: f64,
 }
 
-// pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, device: B::Device) {
-//     std::fs::create_dir_all(artifact_dir).ok();
-//     config
-//         .save(format!("{artifact_dir}/config.json"))
-//         .expect("Config should be saved successfully");
+pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, device: B::Device) {
+    std::fs::create_dir_all(artifact_dir).ok();
+    config
+        .save(format!("{artifact_dir}/config.json"))
+        .expect("Config should be saved successfully");
 
-//     B::seed(config.seed);
-//     let batcher_train = Tester::<B>::new(device.clone());
-//     let batcher_valid = Tester::<B::InnerBackend>::new(device.clone());
+    B::seed(config.seed);
+    let batcher_train = Tester::<B>::new(device.clone());
+    let batcher_valid = Tester::<B::InnerBackend>::new(device.clone());
 
-//     let dataloader_train = DataLoaderBuilder::new(batcher_train)
-//         .batch_size(config.batch_size)
-//         .shuffle(config.seed)
-//         .num_workers(config.num_workers)
-//         .build(DiabetesDataset::new().unwrap());
+    let dataloader_train = DataLoaderBuilder::new(batcher_train)
+        .batch_size(config.batch_size)
+        .shuffle(config.seed)
+        .num_workers(config.num_workers)
+        .build(DiabetesDataset::new());
 
-//     let dataloader_test = DataLoaderBuilder::new(batcher_valid)
-//         .batch_size(config.batch_size)
-//         .shuffle(config.seed)
-//         .num_workers(config.num_workers)
-//         .build(DiabetesDataset::new().unwrap());
+    let dataloader_test = DataLoaderBuilder::new(batcher_valid)
+        .batch_size(config.batch_size)
+        .shuffle(config.seed)
+        .num_workers(config.num_workers)
+        .build(DiabetesDataset::new());
 
-//     let learner = LearnerBuilder::new(artifact_dir)
-//         .metric_train_numeric(AccuracyMetric::new())
-//         .metric_valid_numeric(AccuracyMetric::new())
-//         .metric_train_numeric(LossMetric::new())
-//         .metric_valid_numeric(LossMetric::new())
-//         .with_file_checkpointer(CompactRecorder::new())
-//         .devices(vec![device])
-//         .num_epochs(config.num_epochs)
-//         .build(
-//             config.model.init::<B>(),
-//             config.optimizer.init(),
-//             config.learning_rate,
-//         );
+    let learner = LearnerBuilder::new(artifact_dir)
+        .metric_train_numeric(AccuracyMetric::new())
+        .metric_valid_numeric(AccuracyMetric::new())
+        .metric_train_numeric(LossMetric::new())
+        .metric_valid_numeric(LossMetric::new())
+        .with_file_checkpointer(CompactRecorder::new())
+        .devices(vec![device])
+        .num_epochs(config.num_epochs)
+        .build(
+            config.model.init::<B>(),
+            config.optimizer.init(),
+            config.learning_rate,
+        );
 
-//     let model_trained = learner.fit(dataloader_train, dataloader_test);
-//     model_trained
-//         .save_file(format!("{artifact_dir}/model"), &CompactRecorder::new())
-//         .expect("Trained model should be saved successfully");
-// }
+    let model_trained = learner.fit(dataloader_train, dataloader_test);
+    model_trained
+        .save_file(format!("{artifact_dir}/model"), &CompactRecorder::new())
+        .expect("Trained model should be saved successfully");
+}
 pub fn main(){
-    let teat= DiabetesDataset::new();
 
-    // let config = ModelConfig::new(10, 1);
-    //  println!("{}",config);
-    //  type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
-    //  type MyAutodiffBackend = Autodiff<MyBackend>;
-    //  let device = burn::backend::wgpu::WgpuDevice::default();
+  
+
+    let config = ModelConfig::new(10, 1024);
+     type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
+     type MyAutodiffBackend = Autodiff<MyBackend>;
+     let device = burn::backend::wgpu::WgpuDevice::default();
     //학습
-    //  train::<MyAutodiffBackend>(
-    //     "./train",
-    //     TrainingConfig::new(ModelConfig::new(10, 1), AdamConfig::new()),
-    //     device,
-    // );
+     train::<MyAutodiffBackend>(
+        "./train",
+        TrainingConfig::new(config, AdamConfig::new()),
+        device,
+    );
 
 
     // infer::<MyAutodiffBackend >("./train",device,DiabetesPatient{width:1,height:1})
@@ -458,3 +496,13 @@ pub fn main(){
 //     //학습이 이상하게 댐
 //     println!("Predicted {} Expected {}", predicted, label);
 // }
+
+fn vec_to_2d_array(input: Vec<f32>) -> [[f32; WIDTH]; WIDTH] {
+    let mut result = [[0.0; WIDTH]; WIDTH];
+    for i in 0..WIDTH {
+        let start = i * WIDTH;
+        let end = start + WIDTH;
+        result[i].copy_from_slice(&input[start..end]);
+    }
+    result
+}
