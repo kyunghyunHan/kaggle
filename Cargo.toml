@@ -23,4 +23,9 @@ linfa-logistic = "0.7.0"
 xgboost = "0.1.4"
 
 burn = { version = "0.11.1", features = ["wgpu", "train"] }
-serde = "1.0.193"
+
+serde_bytes = "0.11"
+serde = { version = "1.0.193" } 
+image = "0.24.8"
+serde-big-array = "0.5.1"
+serde_derive = "1.0.195"
