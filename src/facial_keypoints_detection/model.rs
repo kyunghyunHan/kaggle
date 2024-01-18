@@ -51,71 +51,39 @@ use polars::prelude::*;
 
 const WIDTH: usize = 96; // Update with the correct width
 const HEIGHT: usize = 96; // Update with the correct height
-// #[derive(Deserialize, Debug, Clone)]
+// #[derive(Debug, PartialEq,Clone)]
 // pub struct DiabetesPatient {
-//     #[serde(rename = "left_eye_center_x")]
 //     pub left_eye_center_x: f32,
-//     #[serde(rename = "left_eye_center_y")]
 //     pub left_eye_center_y: f32,
-//     #[serde(rename = "right_eye_center_x")]
 //     pub right_eye_center_x: f32,
-//     #[serde(rename = "right_eye_center_y")]
 //     pub right_eye_center_y: f32,
-//     #[serde(rename = "left_eye_inner_corner_x")]
 //     pub left_eye_inner_corner_x: f32,
-//     #[serde(rename = "left_eye_inner_corner_y")]
 //     pub left_eye_inner_corner_y: f32,
-//     #[serde(rename = "left_eye_outer_corner_x")]
 //     pub left_eye_outer_corner_x: f32,
-//     #[serde(rename = "left_eye_outer_corner_y")]
 //     pub left_eye_outer_corner_y: f32,
-//     #[serde(rename = "right_eye_inner_corner_x")]
 //     pub right_eye_inner_corner_x: f32,
-//     #[serde(rename = "right_eye_inner_corner_y")]
 //     pub right_eye_inner_corner_y: f32,
-//     #[serde(rename = "right_eye_outer_corner_x")]
 //     pub right_eye_outer_corner_x: f32,
-//     #[serde(rename = "right_eye_outer_corner_y")]
 //     pub right_eye_outer_corner_y: f32,
-//     #[serde(rename = "left_eyebrow_inner_end_x")]
 //     pub left_eyebrow_inner_end_x: f32,
-//     #[serde(rename = "left_eyebrow_inner_end_y")]
 //     pub left_eyebrow_inner_end_y: f32,
-//     #[serde(rename = "left_eyebrow_outer_end_x")]
 //     pub left_eyebrow_outer_end_x: f32,
-//     #[serde(rename = "left_eyebrow_outer_end_y")]
 //     pub left_eyebrow_outer_end_y: f32,
-//     #[serde(rename = "right_eyebrow_inner_end_x")]
 //     pub right_eyebrow_inner_end_x: f32,
-//     #[serde(rename = "right_eyebrow_inner_end_y")]
 //     pub right_eyebrow_inner_end_y: f32,
-//     #[serde(rename = "right_eyebrow_outer_end_x")]
 //     pub right_eyebrow_outer_end_x: f32,
-//     #[serde(rename = "right_eyebrow_outer_end_y")]
 //     pub right_eyebrow_outer_end_y: f32,
-//     #[serde(rename = "nose_tip_x")]
 //     pub nose_tip_x: f32,
-
-//     #[serde(rename = "nose_tip_y")]
 //     pub nose_tip_y: f32,
-//     #[serde(rename = "mouth_left_corner_x")]
 //     pub mouth_left_corner_x: f32,
-//     #[serde(rename = "mouth_left_corner_y")]
 //     pub mouth_left_corner_y: f32,
-//     #[serde(rename = "mouth_right_corner_x")]
 //     pub mouth_right_corner_x: f32,
-//     #[serde(rename = "mouth_right_corner_y")]
 //     pub mouth_right_corner_y: f32,
-//     #[serde(rename = "mouth_center_top_lip_x")]
 //     pub mouth_center_top_lip_x: f32,
-//     #[serde(rename = "mouth_center_top_lip_y")]
 //     pub mouth_center_top_lip_y: f32,
-//     #[serde(rename = "mouth_center_bottom_lip_x")]
 //     pub mouth_center_bottom_lip_x: f32,
-//     #[serde(rename = "mouth_center_bottom_lip_y")]
 //     pub mouth_center_bottom_lip_y: f32,
-//     #[serde(rename = "Image")]
-//     pub image:ImageArray,
+//     pub image:[[f32;WIDTH];WIDTH],
 // }
 
 

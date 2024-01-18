@@ -10,6 +10,7 @@ mod data_science_london;
 mod icr_identifying_age_related_conditions;
 mod digit_recognizer;
 mod facial_keypoints_detection;
+mod natural_language_processing_with_disaster_tweets;
 fn main() {
     // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();
@@ -22,5 +23,6 @@ fn main() {
     // data_science_london::model::main();
     // icr_identifying_age_related_conditions::model::main();
     // digit_recognizer::model::main();
-    facial_keypoints_detection::model::main();
+    // facial_keypoints_detection::model::main();
+    natural_language_processing_with_disaster_tweets::model::main();
 }
