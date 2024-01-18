@@ -22,7 +22,7 @@ fn main() {
     // forecasting_mini_cource_sales::model::main();
     // data_science_london::model::main();
     // icr_identifying_age_related_conditions::model::main();
-    // digit_recognizer::model::main();
+    digit_recognizer::model::main();
     // facial_keypoints_detection::model::main();
-    natural_language_processing_with_disaster_tweets::model::main();
+    // natural_language_processing_with_disaster_tweets::model::main();
 }

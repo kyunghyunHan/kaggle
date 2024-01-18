@@ -10,13 +10,13 @@ use std::fs::File;
 pub fn main(){
    /*===================data========================= */
    //train
-   let  mut train_df: DataFrame = CsvReader::from_path("./datasets/store-sales-time-series-forecasting/train.csv").unwrap()
+   let  train_df: DataFrame = CsvReader::from_path("./datasets/store-sales-time-series-forecasting/train.csv").unwrap()
    .finish().unwrap();//null 없음
      //test
-    let  mut test_df: DataFrame = CsvReader::from_path("./datasets/store-sales-time-series-forecasting/test.csv").unwrap()
+    let  test_df: DataFrame = CsvReader::from_path("./datasets/store-sales-time-series-forecasting/test.csv").unwrap()
      .finish().unwrap();//null 없음
     //submission
-    let  mut submission_df: DataFrame = CsvReader::from_path("./datasets/store-sales-time-series-forecasting/sample_submission.csv").unwrap()
+    let  submission_df: DataFrame = CsvReader::from_path("./datasets/store-sales-time-series-forecasting/sample_submission.csv").unwrap()
     .finish().unwrap();//null 없음
 
     println!("{:?}",train_df.shape());
@@ -164,58 +164,30 @@ let test_transformed_data: Vec<f32> = test_date_data.iter()
     concatenated.parse::<f32>().unwrap_or(0.0) // f32 숫자로 변환합니다. 변환이 실패하면 0.0으로 반환합니다.
 })
 .collect();
-// // // convert training data into XGBoost's matrix format
 let mut dtrain: DMatrix = DMatrix::from_dense(&transformed_data,num_rows).unwrap();
 
-// // // set ground truth labels for the training matrix
 dtrain.set_labels(&sales_data).unwrap();
-
-// // // test matrix with 1 row
-// println!("{:?}",test_result_df.shape());
-
-// let x_test = test_result_df.into_shape(1459* 2).unwrap();
-// let x_test:Vec<f32>= x_test.into_iter().collect();
-
 let num_rows = 28512;
-// let result_train:Vec<f32>= test_target_data.iter().map(|x|*x as f32).collect();
-
-
 let mut dtest = DMatrix::from_dense(&test_transformed_data, num_rows).unwrap();
 dtest.set_labels(&test_sales_data).unwrap();
 
-// // specify datasets to evaluate against during training
 let evaluation_sets = &[(&dtrain, "train"), (&dtest, "test")];
 
-// // specify overall training setup
 let training_params = parameters::TrainingParametersBuilder::default()
     .dtrain(&dtrain)
     .evaluation_sets(Some(evaluation_sets))
     .build()
     .unwrap();
-
-// // // train model, and print evaluation data
 let bst = Booster::train(&training_params).unwrap();
 let y= bst.predict(&dtest).unwrap();
 let y:Vec<f64>= y.iter().map(|x|*x as f64).collect();
 println!("{:?}", bst.predict(&dtest).unwrap());
-
-/*===================xgboost========================= */
-/*===================model========================= */
 /*===================제출용 파일========================= */
-
-
 let survived_series = Series::new("sales",&y);
 let passenger_id_series = test_df.column("id").unwrap().clone();
-
 let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
-
-
 let mut output_file: File = File::create("./datasets/store-sales-time-series-forecasting/out.csv").unwrap();
-
 CsvWriter::new(&mut output_file)
-    // .has_header(true)
     .finish(&mut df)
     .unwrap();
-/*===================제출용 파일========================= */
-
 }
