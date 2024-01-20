@@ -11,6 +11,7 @@ mod icr_identifying_age_related_conditions;
 mod digit_recognizer;
 mod facial_keypoints_detection;
 mod natural_language_processing_with_disaster_tweets;
+use rayon::prelude::*;
 fn main() {
     // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();

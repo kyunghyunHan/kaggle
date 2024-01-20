@@ -1,4 +1,4 @@
-
+use std::fs::File;
 use burn::{
     config::Config,
     module::Module,
@@ -29,6 +29,8 @@ use burn::{
         wgpu::AutoGraphicsApi
     }
 };
+use rayon::prelude::*;
+
 extern crate serde;
 #[macro_use]
 use serde_derive;
@@ -133,6 +135,26 @@ pub struct ModelConfig {
     dropout: f64,//dropout
 }
 impl DiabetesDataset {
+
+    pub fn test_data()->Self{
+        let test_df= CsvReader::from_path("./datasets/digit-recognizer/test.csv").unwrap().finish().unwrap();
+
+        let pixel= test_df.to_ndarray::<Float32Type>(IndexOrder::Fortran).unwrap();
+
+        let mut pixex_vec: Vec<Vec<_>> = Vec::new();
+        for row in pixel.outer_iter() {
+            let row_vec: Vec<_> = row.iter().cloned().collect();
+            pixex_vec.push(row_vec);
+        }
+        let mut bb: Vec<DiabetesPatient>= Vec::new();
+  
+        for k in 0..pixex_vec.len(){
+            let two_dimensional_array = vec_to_2d_array(pixex_vec[k].clone());
+
+            bb.push(DiabetesPatient{label:0,image:two_dimensional_array});
+        }        
+        DiabetesDataset{dataset:bb}
+    }
     pub fn new() -> Self {
         let train_df= CsvReader::from_path("./datasets/digit-recognizer/train.csv").unwrap().finish().unwrap();
         let labels:Vec<i64>= train_df.column("label").unwrap().i64().unwrap().into_no_null_iter().collect();
@@ -248,7 +270,11 @@ impl<B: Backend> Batcher<DiabetesPatient, Test<B>> for Tester<B> {
 
         Test { images, targets }
     }
+    
+    
 }
+
+
 #[derive(Config)]
 pub struct TrainingConfig {
     pub model: ModelConfig,
@@ -264,7 +290,7 @@ pub struct TrainingConfig {
     #[config(default = 1.0e-4)]
     pub learning_rate: f64,
 }
- fn infer<B: Backend>(artifact_dir: &str, device: B::Device, item: DiabetesPatient) {
+ fn infer<B: Backend>(artifact_dir: &str, device: B::Device, item: DiabetesPatient)->i32 {
     let config = TrainingConfig::load(format!("{artifact_dir}/config.json"))
         .expect("Config should exist for the model");
     let record = CompactRecorder::new()
@@ -278,11 +304,14 @@ pub struct TrainingConfig {
     let batch = batcher.batch(vec![item]);
     let output = model.forward(batch.images);
 
-    println!("{}",output.to_data());
+    // println!("{}",output.to_data());
     let predicted = output.argmax(1).flatten::<1>(0, 1).into_scalar();
+    let a:i32= predicted.elem();
+    a
+
     //예측값과 실제 레이블값
     //학습이 이상하게 댐
-    println!("Predicted {} Expected {}", predicted, label);
+    // println!("Predicted {} Expected {}", predicted, label);
 }
 pub fn train<B: AutodiffBackend>(artifact_dir: &str, config: TrainingConfig, device: B::Device) {
     std::fs::create_dir_all(artifact_dir).ok();
@@ -333,6 +362,8 @@ pub fn main(){
      type MyBackend = Wgpu<AutoGraphicsApi, f32, i32>;
      type MyAutodiffBackend = Autodiff<MyBackend>;
      let device = burn::backend::wgpu::WgpuDevice::default();
+
+     
     //학습
     //  train::<MyAutodiffBackend>(
     //     "./train",
@@ -340,20 +371,50 @@ pub fn main(){
     //     device,
     // );
 
-    let a= [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,48,143,186,244,143,31,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,83,209,253,252,252,252,252,192,15,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,166,241,252,253,252,170,162,252,252,113,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,61,234,252,252,243,121,44,2,21,245,252,122,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,80,252,252,243,163,50,0,0,0,5,101,88,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,105,234,252,210,88,0,0,0,0,74,199,240,43,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,185,252,210,21,0,4,12,41,231,249,252,252,55,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,252,218,154,154,184,252,253,252,252,248,184,22,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,209,252,252,252,252,252,252,253,252,252,196,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,17,57,142,95,142,61,81,253,252,209,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,177,255,230,86,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,12,124,252,245,57,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,135,252,252,86,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,79,248,252,233,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,231,252,202,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20,175,248,252,136,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,109,252,252,159,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,33,218,252,252,192,141,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,132,252,252,252,205,74,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,132,252,252,146,13,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-    ];
-    let mut result: [[f32; 28]; 28] = [[0.0; 28]; 28];
+    // let a= [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,43,113,183,174,253,193,37,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,190,183,252,252,252,252,253,142,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,73,237,252,253,252,252,252,252,253,168,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,22,158,252,252,253,231,189,119,128,253,224,14,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,18,199,252,252,164,104,54,0,0,0,165,217,110,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,43,253,253,253,165,0,0,0,0,0,166,253,253,253,147,0,0,0,0,0,0,0,0,0,0,0,0,0,43,252,252,252,252,129,128,78,0,116,253,252,252,252,112,0,0,0,0,0,0,0,0,0,0,0,0,0,43,252,252,252,252,253,252,251,232,249,253,252,252,141,4,0,0,0,0,0,0,0,0,0,0,0,0,0,14,163,247,252,252,253,252,252,252,252,253,252,244,49,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,47,103,235,253,252,252,252,252,253,252,252,198,18,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,107,27,216,253,253,255,253,253,253,253,175,11,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,48,252,252,186,205,252,252,252,253,170,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,22,252,252,106,16,118,196,249,253,252,170,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,66,252,252,62,0,0,0,115,253,252,245,56,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,22,252,252,150,0,0,0,0,165,252,252,128,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9,204,253,255,174,12,0,0,61,253,253,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,90,252,253,252,195,190,146,227,252,252,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,161,253,252,252,252,252,253,252,252,84,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,35,156,252,252,252,252,253,252,141,28,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,77,200,252,252,253,173,12,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+    // ];
+    // let mut result: [[f32; 28]; 28] = [[0.0; 28]; 28];
 
-    // Convert the 1D array to a 2D array
-    for i in 0..28 {
-        for j in 0..28 {
-            // Calculate the index in the 1D array
-            let index = i * 28 + j;
-            // Copy the value from the 1D array to the 2D array
-            result[i][j] = a[index] as f32;
-        }
-    }
-    infer::<MyAutodiffBackend >("./train",device,DiabetesPatient{image:result,label:2})
+    // // Convert the 1D array to a 2D array
+    // for i in 0..28 {
+    //     for j in 0..28 {
+    //         // Calculate the index in the 1D array
+    //         let index = i * 28 + j;
+    //         // Copy the value from the 1D array to the 2D array
+    //         result[i][j] = a[index] as f32;
+    //     }
+    // }
+    
+    let test_data= DiabetesDataset::test_data();
+    // let mut result:Vec<i32>= Vec::new();
+    // for i in 0..test_data.len(){
+    //     let a= infer::<MyAutodiffBackend >("./train",device.clone(),DiabetesPatient{image:test_data.dataset[i].image,label:8});
+    //     result.push(a);
+    // }
+
+//     let mut result: Vec<i32> = Vec::new();
+// let batch_size = 64; // 필요에 따라 일괄 크기 조절
+
+// for chunk in test_data.dataset.chunks(batch_size) {
+//     let mut batch_result: Vec<i32> = Vec::new();
+//     for item in chunk {
+//         let prediction = infer::<MyAutodiffBackend>("./train", device.clone(), DiabetesPatient{image:item.image, label: 8});
+//         batch_result.push(prediction);
+//     }
+//     result.extend(batch_result);
+// }
+// use rayon::prelude::*;
+
+let result: Vec<i32> = test_data.dataset.par_iter()
+    .map(|item| infer::<MyAutodiffBackend>("./train", device.clone(), DiabetesPatient{image:item.image, label: 8}))
+    .collect();
+    let survived_series = Series::new("Label", result.into_iter().collect::<Vec<i32>>());
+    let passenger_id_series = Series::new("ImageId", (1..=28000).collect::<Vec<i32>>());
+
+    let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
+    let mut output_file: File = File::create("./datasets/digit-recognizer/out.csv").unwrap();
+    CsvWriter::new(&mut output_file).finish(&mut df).unwrap();
+
 }
 
 
