@@ -10,6 +10,7 @@ use smartcore::{
     ensemble::random_forest_classifier::RandomForestClassifier,
 };
 use std::fs::File;
+use rayon::prelude::*;
 pub fn main() {
     /*===================data 불러오기========================= */
 

@@ -7,7 +7,7 @@ use smartcore::ensemble::random_forest_classifier::{
 use smartcore::linalg::basic::matrix::DenseMatrix;
 use smartcore::metrics::*;
 use std::fs::File;
-
+ 
 pub fn main() {
     /*===================data========================= */
     //필요없는 PassegerId,Name,Ticket제거
