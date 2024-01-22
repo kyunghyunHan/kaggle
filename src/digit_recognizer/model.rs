@@ -304,7 +304,8 @@ pub struct TrainingConfig {
     let batch = batcher.batch(vec![item]);
     let output = model.forward(batch.images);
 
-    // println!("{}",output.to_data());
+    println!("{}",output.to_data());
+    
     let predicted = output.argmax(1).flatten::<1>(0, 1).into_scalar();
     let a:i32= predicted.elem();
     a
@@ -410,7 +411,7 @@ let result: Vec<i32> = test_data.dataset.par_iter()
     .collect();
     let survived_series = Series::new("Label", result.into_iter().collect::<Vec<i32>>());
     let passenger_id_series = Series::new("ImageId", (1..=28000).collect::<Vec<i32>>());
-
+    
     let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
     let mut output_file: File = File::create("./datasets/digit-recognizer/out.csv").unwrap();
     CsvWriter::new(&mut output_file).finish(&mut df).unwrap();
