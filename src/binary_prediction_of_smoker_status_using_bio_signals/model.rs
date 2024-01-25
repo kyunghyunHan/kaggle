@@ -193,7 +193,7 @@ let dental_caries_corr: f64 = pearson_corr(
 .unwrap();
 
     println!("age_corr:{}", age_corr);
-    println!("weight_corr:{}", height_corr);
+    println!("height_corr:{}", height_corr);
     println!("weight_corr:{}", weight_corr);
     println!("waist_corr:{}", waist_corr);
     println!("eyesight(left):{}", eyesight_left_corr);
@@ -215,5 +215,7 @@ let dental_caries_corr: f64 = pearson_corr(
     println!("gtp_corr:{}", gtp_corr);
     println!("dental_caries_corr:{}", dental_caries_corr);
 
+   /*상관계수가 0.2이상 것들만 파악  */
 
+   let mut train_df=  train_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap();
 }
