@@ -11,6 +11,7 @@ mod icr_identifying_age_related_conditions;
 mod digit_recognizer;
 mod facial_keypoints_detection;
 mod natural_language_processing_with_disaster_tweets;
+mod binary_prediction_of_smoker_status_using_bio_signals;
 use rayon::prelude::*;
 fn main() {
     // titanic::titanic::main();
@@ -23,7 +24,8 @@ fn main() {
     // forecasting_mini_cource_sales::model::main();
     // data_science_london::model::main();
     // icr_identifying_age_related_conditions::model::main();
-    digit_recognizer::model::main();
+    // digit_recognizer::model::main();
     // facial_keypoints_detection::model::main();
     // natural_language_processing_with_disaster_tweets::model::main();
+    binary_prediction_of_smoker_status_using_bio_signals::model::main();
 }
