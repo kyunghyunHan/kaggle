@@ -12,7 +12,7 @@ ndarray = "0.15.6"
 ndarray-stats = "0.5.1"
 smartcore="0.3.2"
 plotters = "0.3.5"
-polars = { version = "0.36.2", features = ["ndarray","to_dummies","lazy","describe","strings","list_count","describe"] }
+polars = { version = "0.36.2", features = ["ndarray","to_dummies","lazy","describe","strings","list_count","describe","cov"] }
 polars-lazy = { version = "0.36.2", features = [] }
 
 linfa-nn = "0.7.0"
@@ -25,7 +25,7 @@ xgboost = "0.1.4"
 burn = { version = "0.11.1", features = ["wgpu", "train"] }
 
 serde_bytes = "0.11"
-serde = { version = "1.0.193" } 
+serde = { version = "1.0.195" } 
 image = "0.24.8"
 serde-big-array = "0.5.1"
 serde_derive = "1.0.195"
