@@ -8,6 +8,7 @@
 - [StorePrice](src/store_sales/store_sales.md)
 - [BinaryClassificationwithBankChurnDataset](src/binary_classification_with_a_bank_churn_dataset/binary_classification_with_a_bank_churn_dataset.md)
 
+
 # DL List
 
-- [Digit Recongnizer](src/digit_recongnizer/digit_recongnizer.md)
+- [Digit Recongnizer](src/digit_recognizer/digit_recongnizer.md)
