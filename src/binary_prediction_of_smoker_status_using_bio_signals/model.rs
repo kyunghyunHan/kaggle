@@ -1,6 +1,11 @@
 use polars::prelude::cov::pearson_corr;
 use polars::prelude::*;
-
+use ndarray::prelude::*;
+use smartcore::linalg::basic::arrays::Array;
+use xgboost::DMatrix;
+use xgboost::parameters;
+use xgboost::Booster;
+use std::fs::File;
 pub fn main() {
     /*data */
     let train_df = CsvReader::from_path("./datasets/playground-series-s3e24/train.csv")
@@ -13,16 +18,14 @@ pub fn main() {
     println!("{:?}", train_df.schema());
 
 
-    let test_df = CsvReader::from_path("./datasets/playground-series-s3e24/test.csv")
-    .unwrap()
-    .finish()
-    .unwrap();
+
     
-    let id_arr= test_df.column("id").unwrap().i64().unwrap().into_no_null_iter().collect::<Vec<i64>>();
-    let test_df = CsvReader::from_path("./datasets/playground-series-s3e24/test.csv")
+    let test_df: DataFrame = CsvReader::from_path("./datasets/playground-series-s3e24/test.csv")
     .unwrap()
     .finish()
     .unwrap().drop("id").unwrap();
+     
+    let submission_df: DataFrame = CsvReader::from_path("./datasets/playground-series-s3e24/sample_submission.csv").unwrap().finish().unwrap();
 
     /*상관관계 확인 */
     let train_df = train_df
@@ -47,6 +50,33 @@ pub fn main() {
             col("Gtp").cast(DataType::Float64),
             col("dental caries").cast(DataType::Float64),
             col("smoking").cast(DataType::Float64),
+        ])
+        .collect()
+        .unwrap();
+
+
+        let test_df: DataFrame = test_df
+        .clone()
+        .lazy()
+        .with_columns([
+            col("age").cast(DataType::Float64),
+            col("height(cm)").cast(DataType::Float64),
+            col("weight(kg)").cast(DataType::Float64),
+            col("hearing(left)").cast(DataType::Float64),
+            col("hearing(right)").cast(DataType::Float64),
+            col("systolic").cast(DataType::Float64),
+            col("relaxation").cast(DataType::Float64),
+            col("fasting blood sugar").cast(DataType::Float64),
+            col("Cholesterol").cast(DataType::Float64),
+            col("triglyceride").cast(DataType::Float64),
+            col("HDL").cast(DataType::Float64),
+            col("LDL").cast(DataType::Float64),
+            col("Urine protein").cast(DataType::Float64),
+            col("AST").cast(DataType::Float64),
+            col("ALT").cast(DataType::Float64),
+            col("Gtp").cast(DataType::Float64),
+            col("dental caries").cast(DataType::Float64),
+            // col("smoking").cast(DataType::Float64),
         ])
         .collect()
         .unwrap();
@@ -230,21 +260,65 @@ let dental_caries_corr: f64 = pearson_corr(
     println!("dental_caries_corr:{}", dental_caries_corr);
 
    /*상관계수가 0.2이상 것들만 파악  */
+   let y_train:Vec<f32>= train_df.column("smoking").unwrap().f64().unwrap().into_no_null_iter().map(|x|x as f32).collect();
+   let y_test:Vec<f32>= submission_df.column("smoking").unwrap().f64().unwrap().into_no_null_iter().map(|x|x as f32).collect();
 
-   let  train_df=  train_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
-   let  test_df=  test_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
+   let  train_df=  train_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap().to_ndarray::<Float32Type>(IndexOrder::Fortran).unwrap();
+   let  test_df=  test_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap().to_ndarray::<Float32Type>(IndexOrder::Fortran).unwrap();
+
+   println!("{:?}", train_df.shape());
+   println!("{:?}", test_df.shape());
+   let x_train: ArrayBase<ndarray::OwnedRepr<f32>, Dim<[usize; 1]>> = train_df.into_shape(159256 * 6).unwrap();
+   let x_train: Vec<f32> = x_train.into_iter().collect();
+ 
+   let x_test: ArrayBase<ndarray::OwnedRepr<f32>, Dim<[usize; 1]>> = test_df.into_shape(106171 * 6).unwrap();
+   let x_test: Vec<f32> = x_test.into_iter().collect();
+//    let mut x_train_vec: Vec<Vec<_>> = Vec::new();
+//    for row in train_df.outer_iter() {
+//        let row_vec: Vec<_> = row.iter().cloned().collect();
+//        x_train_vec.push(row_vec);
+//    }
+
+
+//    let mut x_test_vec: Vec<Vec<_>> = Vec::new();
+//    for row in test_df.outer_iter() {
+//        let row_vec: Vec<_> = row.iter().cloned().collect();
+//        x_test_vec.push(row_vec);
+//    }
+
+   let mut dtrain = DMatrix::from_dense(&x_train, 159256).unwrap();
+   dtrain.set_labels(&y_train).unwrap();
+   let mut dtest = DMatrix::from_dense(&x_test, 106171).unwrap();
+   dtest.set_labels(&y_test).unwrap();
    
 
-   let mut x_train_vec: Vec<Vec<_>> = Vec::new();
-   for row in train_df.outer_iter() {
-       let row_vec: Vec<_> = row.iter().cloned().collect();
-       x_train_vec.push(row_vec);
-   }
-   
+   let evaluation_sets = &[(&dtrain, "train"), (&dtest, "test")];
 
-   let mut x_test_vec: Vec<Vec<_>> = Vec::new();
-   for row in test_df.outer_iter() {
-       let row_vec: Vec<_> = row.iter().cloned().collect();
-       x_test_vec.push(row_vec);
-   }
+    // // specify overall training setup
+    let training_params = parameters::TrainingParametersBuilder::default()
+        .dtrain(&dtrain)
+        .evaluation_sets(Some(evaluation_sets))
+        .build()
+        .unwrap();
+
+    // // // train model, and print evaluation data
+    let bst = Booster::train(&training_params).unwrap();
+    let y = bst.predict(&dtest).unwrap();
+    let y: Vec<f64> = y.iter().map(|x| *x as f64).collect();
+    println!("{:?}", bst.predict(&dtest).unwrap());
+
+
+    let survived_series = Series::new("smoking", &y);
+    let passenger_id_series = submission_df.clone().column("id").unwrap().clone();
+
+    let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
+    println!("{}", df.null_count());
+
+    let mut output_file: File =
+        File::create("./datasets/playground-series-s3e24/out.csv").unwrap();
+  
+    CsvWriter::new(&mut output_file)
+        // .has_header(true)
+        .finish(&mut df)
+        .unwrap();
 }
