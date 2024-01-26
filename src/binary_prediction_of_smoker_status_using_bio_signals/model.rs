@@ -2,13 +2,27 @@ use polars::prelude::cov::pearson_corr;
 use polars::prelude::*;
 
 pub fn main() {
+    /*data */
     let train_df = CsvReader::from_path("./datasets/playground-series-s3e24/train.csv")
         .unwrap()
         .finish()
         .unwrap()
         .drop_many(&["id"]);
+
     println!("null_data:{}", train_df.null_count());
     println!("{:?}", train_df.schema());
+
+
+    let test_df = CsvReader::from_path("./datasets/playground-series-s3e24/test.csv")
+    .unwrap()
+    .finish()
+    .unwrap();
+    
+    let id_arr= test_df.column("id").unwrap().i64().unwrap().into_no_null_iter().collect::<Vec<i64>>();
+    let test_df = CsvReader::from_path("./datasets/playground-series-s3e24/test.csv")
+    .unwrap()
+    .finish()
+    .unwrap().drop("id").unwrap();
 
     /*상관관계 확인 */
     let train_df = train_df
@@ -217,5 +231,20 @@ let dental_caries_corr: f64 = pearson_corr(
 
    /*상관계수가 0.2이상 것들만 파악  */
 
-   let mut train_df=  train_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap();
+   let  train_df=  train_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
+   let  test_df=  test_df.select(["hemoglobin","weight(kg)","height(cm)","triglyceride","Gtp","serum creatinine"]).unwrap().to_ndarray::<Float64Type>(IndexOrder::Fortran).unwrap();
+   
+
+   let mut x_train_vec: Vec<Vec<_>> = Vec::new();
+   for row in train_df.outer_iter() {
+       let row_vec: Vec<_> = row.iter().cloned().collect();
+       x_train_vec.push(row_vec);
+   }
+   
+
+   let mut x_test_vec: Vec<Vec<_>> = Vec::new();
+   for row in test_df.outer_iter() {
+       let row_vec: Vec<_> = row.iter().cloned().collect();
+       x_test_vec.push(row_vec);
+   }
 }
