@@ -10,4 +10,4 @@
 
 # DL List
 
-- 
+- [Digit Recongnizer](src/digit_recongnizer/digit_recongnizer.md)
