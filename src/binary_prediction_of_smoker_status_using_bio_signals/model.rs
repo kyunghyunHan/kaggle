@@ -1,7 +1,6 @@
 use polars::prelude::cov::pearson_corr;
 use polars::prelude::*;
 use ndarray::prelude::*;
-use smartcore::linalg::basic::arrays::Array;
 use xgboost::DMatrix;
 use xgboost::parameters;
 use xgboost::Booster;
@@ -273,18 +272,6 @@ let dental_caries_corr: f64 = pearson_corr(
  
    let x_test: ArrayBase<ndarray::OwnedRepr<f32>, Dim<[usize; 1]>> = test_df.into_shape(106171 * 6).unwrap();
    let x_test: Vec<f32> = x_test.into_iter().collect();
-//    let mut x_train_vec: Vec<Vec<_>> = Vec::new();
-//    for row in train_df.outer_iter() {
-//        let row_vec: Vec<_> = row.iter().cloned().collect();
-//        x_train_vec.push(row_vec);
-//    }
-
-
-//    let mut x_test_vec: Vec<Vec<_>> = Vec::new();
-//    for row in test_df.outer_iter() {
-//        let row_vec: Vec<_> = row.iter().cloned().collect();
-//        x_test_vec.push(row_vec);
-//    }
 
    let mut dtrain = DMatrix::from_dense(&x_train, 159256).unwrap();
    dtrain.set_labels(&y_train).unwrap();
@@ -294,14 +281,12 @@ let dental_caries_corr: f64 = pearson_corr(
 
    let evaluation_sets = &[(&dtrain, "train"), (&dtest, "test")];
 
-    // // specify overall training setup
     let training_params = parameters::TrainingParametersBuilder::default()
         .dtrain(&dtrain)
         .evaluation_sets(Some(evaluation_sets))
         .build()
         .unwrap();
 
-    // // // train model, and print evaluation data
     let bst = Booster::train(&training_params).unwrap();
     let y = bst.predict(&dtest).unwrap();
     let y: Vec<f64> = y.iter().map(|x| *x as f64).collect();
@@ -312,8 +297,6 @@ let dental_caries_corr: f64 = pearson_corr(
     let passenger_id_series = submission_df.clone().column("id").unwrap().clone();
 
     let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
-    println!("{}", df.null_count());
-
     let mut output_file: File =
         File::create("./datasets/playground-series-s3e24/out.csv").unwrap();
   

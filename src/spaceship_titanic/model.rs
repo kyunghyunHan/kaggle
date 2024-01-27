@@ -594,7 +594,7 @@ pub fn main() {
         .collect()
         .unwrap();
     let mut output_file: File = File::create("./datasets/spaceship-titanic/out.csv").unwrap();
-
+  
     CsvWriter::new(&mut output_file)
         // .has_header(true)
         .finish(&mut df)
