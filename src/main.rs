@@ -14,10 +14,10 @@ mod natural_language_processing_with_disaster_tweets;
 mod binary_prediction_of_smoker_status_using_bio_signals;
 use rayon::prelude::*;
 fn main() {
-    titanic::titanic::main();
+    // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();
     // spaceship_titanic::model::main();
-    // house_price::model::main();
+    house_price::model::main();
     // store_sales::model::main();
     // binary_classification_with_a_bank_churn_dataset::model::main();
     // predict_co2_emissions_in_rwanda::model::main();

@@ -82,3 +82,5 @@ MoSold : 판매월
 YrSold : 판매된 연도
 SaleType : 판매 유형
 SaleCondition : 판매 조건
+
+## 
