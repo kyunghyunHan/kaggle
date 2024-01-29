@@ -32,14 +32,10 @@ use burn::{
 use rayon::prelude::*;
 
 extern crate serde;
-#[macro_use]
-use serde_derive;
-use serde_big_array::BigArray;
+
 
 use serde::{Serialize, Deserialize, Serializer, Deserializer};
-
 use burn::data::dataset::{Dataset, InMemDataset};
-use std::path::Path;
 use burn::tensor::ElementConversion;
 use burn::record::Recorder;
 use serde_bytes::ByteBuf;
@@ -58,7 +54,7 @@ const HEIGHT: usize = 28;
 #[derive(Debug, PartialEq,Clone)]
 struct DiabetesPatient {
     label: i64,
-    pub image:[[f32;WIDTH];WIDTH],
+    pub image:[[f32;WIDTH];HEIGHT],
 }
 
 #[derive(Serialize, Deserialize,Clone)]

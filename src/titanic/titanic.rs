@@ -9,19 +9,15 @@ use smartcore::linalg::basic::matrix::DenseMatrix;
 use smartcore::metrics::*;
 use std::fs::File;
 pub fn main() {
-    /*===================data========================= */
-    //필요없는 PassegerId,Name,Ticket제거
+    /*===================data 확인========================= */
     let train_df: DataFrame = CsvReader::from_path("./datasets/titanic/train.csv")
         .unwrap()
         .finish()
-        .unwrap()
-        .drop_many(&["PassengerId", "Name", "Ticket"]);
+        .unwrap();
     let test_df = CsvReader::from_path("./datasets/titanic/test.csv")
         .unwrap()
         .finish()
-        .unwrap()
-        .drop_many(&["PassengerId", "Name", "Ticket"]);
-
+        .unwrap();
     let submission_df = CsvReader::from_path("./datasets/titanic/gender_submission.csv")
         .unwrap()
         .finish()
@@ -30,6 +26,11 @@ pub fn main() {
     println!("데이터 미리보기:{}", train_df.head(None));
     println!("데이터 정보 확인:{:?}", train_df.schema());
     println!("null확인:{:?}", train_df.null_count());
+    
+
+    //필요없는 PassegerId,Name,Ticket제거
+    let train_df = train_df.drop_many(&["PassengerId", "Name", "Ticket"]);
+    let test_df = test_df.drop_many(&["PassengerId", "Name", "Ticket"]);
 
     /*
     범주형 : Survived, Sex, Embarkd / PClass
@@ -58,8 +59,7 @@ pub fn main() {
         .collect()
         .unwrap()
         .drop_many(&["Cabin"]);
-
-    println!("중간점검:{:?}", train_df.tail(Some(3)));
+    
     println!("null확인:{}", train_df.null_count());
     println!("null확인:{}", test_df.null_count());
     //범주형 먼저 처리
@@ -133,7 +133,7 @@ pub fn main() {
         .unwrap();
     println!("{}", train_df.tail(Some(3)));
     println!("{:?}", train_df.schema());
-  /*=== 상관 관계 확인 ==== */
+    /*=== 상관 관계 확인 ==== */
     let age_corr = pearson_corr(
         train_df.column("Age").unwrap().f64().unwrap(),
         train_df
@@ -162,12 +162,20 @@ pub fn main() {
         1,
     )
     .unwrap();
-let fare_corr = pearson_corr(
-    train_df.column("Fare").unwrap().f64().unwrap(),
-    train_df.column("Survived").unwrap().i64().unwrap().cast(&DataType::Float64).unwrap().f64().unwrap(),
-    1,
-)
-.unwrap();
+    let fare_corr = pearson_corr(
+        train_df.column("Fare").unwrap().f64().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
     let pclass_1_corr = pearson_corr(
         train_df.column("Pclass_1").unwrap().i32().unwrap(),
         train_df
@@ -282,7 +290,6 @@ let fare_corr = pearson_corr(
     )
     .unwrap();
 
-
     println!("age_corr:{}", age_corr);
     println!("sibsp_corr:{}", sibsp_corr);
     println!("parch_corr:{}", parch_corr);
@@ -303,9 +310,30 @@ let fare_corr = pearson_corr(
     //sex_male_corr:-0.5433513806577551
     //embarked_c_corr:0.16824043121823315
     //embarked_s_corr:-0.14968272327068557
-     //Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S","Survived
-     let train_df= train_df.select(["Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S","Survived"]).unwrap();
-     let test_df: DataFrame= test_df.select(["Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S"]).unwrap();
+    //Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S","Survived
+    let train_df = train_df
+        .select([
+            "Pclass_1",
+            "Pclass_3",
+            "Fare",
+            "Sex_female",
+            "Sex_male",
+            "Embarked_C",
+            "Embarked_S",
+            "Survived",
+        ])
+        .unwrap();
+    let test_df: DataFrame = test_df
+        .select([
+            "Pclass_1",
+            "Pclass_3",
+            "Fare",
+            "Sex_female",
+            "Sex_male",
+            "Embarked_C",
+            "Embarked_S",
+        ])
+        .unwrap();
 
     /*data 변환 */
     //target_data
