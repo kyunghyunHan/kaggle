@@ -7,6 +7,7 @@ use smartcore::ensemble::random_forest_classifier::{
 };
 use smartcore::linalg::basic::matrix::DenseMatrix;
 use smartcore::metrics::*;
+use smartcore::neighbors::knn_classifier::{KNNClassifier, KNNClassifierParameters};
 use std::fs::File;
 pub fn main() {
     /*===================data 확인========================= */
@@ -26,7 +27,6 @@ pub fn main() {
     println!("데이터 미리보기:{}", train_df.head(None));
     println!("데이터 정보 확인:{:?}", train_df.schema());
     println!("null확인:{:?}", train_df.null_count());
-    
 
     //필요없는 PassegerId,Name,Ticket제거
     let train_df = train_df.drop_many(&["PassengerId", "Name", "Ticket"]);
@@ -59,7 +59,7 @@ pub fn main() {
         .collect()
         .unwrap()
         .drop_many(&["Cabin"]);
-    
+
     println!("null확인:{}", train_df.null_count());
     println!("null확인:{}", test_df.null_count());
     //범주형 먼저 처리
@@ -335,7 +335,6 @@ pub fn main() {
         ])
         .unwrap();
 
-    /*data 변환 */
     //target_data
     let y_train = train_df.column("Survived").unwrap();
     let y_train: Vec<i64> = y_train.i64().unwrap().into_no_null_iter().collect();
@@ -368,19 +367,26 @@ pub fn main() {
     let survived: Vec<i64> = survived.i64().unwrap().into_no_null_iter().collect();
     let survived: Vec<i32> = survived.iter().map(|x| *x as i32).collect();
     /*===================model test======================== */
-    /*랜덤포레스트 */
-    let random_forest = RandomForestClassifier::fit(
+    /*knn */
+    let knn_model= KNNClassifier::fit(     &x_train,
+        &y_train, KNNClassifierParameters::default()).unwrap();
+    let knn_y_pred= knn_model.predict(&x_test).unwrap();
+    let knn_acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&survived, &knn_y_pred);
+    println!("{:?}", knn_acc);
+    
+     /*랜덤포레스트 */
+    let random_forest_model = RandomForestClassifier::fit(
         &x_train,
         &y_train,
         RandomForestClassifierParameters::default().with_n_trees(100),
     )
     .unwrap();
-    let y_pred: Vec<i32> = random_forest.predict(&x_test).unwrap();
-    let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&survived, &y_pred);
+    let random_forest_y_pred: Vec<i32> = random_forest_model.predict(&x_test).unwrap();
+    let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&survived, &random_forest_y_pred);
     println!("{:?}", acc);
     /*===================제출용 파일========================= */
     //random forest 가 가장 빠르기 때문에
-    let survived_series = Series::new("Survived", y_pred.into_iter().collect::<Vec<i32>>());
+    let survived_series = Series::new("Survived", random_forest_y_pred.into_iter().collect::<Vec<i32>>());
     let passenger_id_series = submission_df.column("PassengerId").unwrap().clone();
 
     let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();

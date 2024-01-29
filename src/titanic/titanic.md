@@ -2,7 +2,7 @@
 
 ## 범주형과 수치형
 
-- 데이터에는 크게 두가지 타입으로 나눌수 있다.
+- 데이터에는 크게 두가지 타입으로 나눌수 있습니다.
 
 ### 1.범주형 데이터
 
@@ -15,6 +15,9 @@
 - 연속형:연속적인 값을 갖는 데이터
 
 ### 데이터 확인
+```rs
+    println!("데이터 미리보기:{}", train_df.head(None));
+```
 
 ```
 ┌──────────┬────────┬────────┬──────┬───┬───────┬─────────┬───────┬──────────┐
@@ -51,10 +54,14 @@ name: Embarked, data type: String
 - 범주형 : Survived, Sex, Embarkd / PClass
 - 수치형 : SibSp, Parch / Age, Fare
 - 혼합형:Ticket, Cabin
+
 ## null 처리
 
-- null값을 확인 후
+- null값을 확인해보니 AGE CABIN등 NULL값이 있는것을 확인할수 있습니다.
+```rs
+    println!("null확인:{}", train_df.null_count());
 
+```
 ```
 ┌──────────┬────────┬─────┬─────┬───┬───────┬──────┬───────┬──────────┐
 │ Survived ┆ Pclass ┆ Sex ┆ Age ┆ … ┆ Parch ┆ Fare ┆ Cabin ┆ Embarked │
@@ -65,7 +72,7 @@ name: Embarked, data type: String
 └──────────┴────────┴─────┴─────┴───┴───────┴──────┴───────┴──────────┘
 ```
 
-- null 값을 처리합니다.
+- null 값을 처리하기 위하여 fill_null을 통해 평균값을 삽입해줍니다.
 
 ```rs
   .with_columns([
@@ -74,8 +81,8 @@ name: Embarked, data type: String
         ])
 ```
 
-- null값이 있는지 확인
-- Cabin의 경우 Nan값이 너무 많기 떄문에 drop해주고 시작
+- Cabin의 경우 Nan값이 너무 많기 떄문에 drop해주고 시작하곘습니다.
+- Null 값을 처리한것을 확인할수 있습니다.
 ```
 null확인:shape: (1, 8)
 ┌──────────┬────────┬─────┬─────┬───────┬───────┬──────┬──────────┐
@@ -86,11 +93,27 @@ null확인:shape: (1, 8)
 │ 0        ┆ 0      ┆ 0   ┆ 0   ┆ 0     ┆ 0     ┆ 0    ┆ 0        │
 └──────────┴────────┴─────┴─────┴───────┴───────┴──────┴──────────┘
 ```
-
 ## 범주형 데이터 처리
 
-- 잘 나누어 진 것을 확인
+- 범주형을 수치형으로 변환을 하기위해 to_dummies 을 사용하여 나누어 줍니다.
+```rs
+    let pclass_train_dummies: DataFrame = train_df
+        .select(["Pclass"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+```
+-  나눈 후 hstack 을 통해 합쳐준후 
+```rs
+        .hstack(pclass_train_dummies.get_columns())
 
+```
+- drop을 통해 원래있던 열을 삭제해줍니다.
+```rs
+        .drop(&"Pclass")
+
+```
+- 확인해보면 데이터가 잘 나누어 진것을 확인할수 있습니다.
 ```
 ┌──────────┬──────────┬───────┬───────┬───┬──────────┬──────────┬──────────┬──────────┐
 │ Survived ┆ Age      ┆ SibSp ┆ Parch ┆ … ┆ Sex_male ┆ Embarked ┆ Embarked ┆ Embarked │
@@ -106,7 +129,23 @@ null확인:shape: (1, 8)
 ```
 
 ## 상관관계를 확인
-
+```rs
+let age_corr = pearson_corr(
+        train_df.column("Age").unwrap().f64().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+```
+- pearson 상관관계를 통해해 Survived와 의 관계를 확인할수 있습니다.
 ```rs
     println!("age_corr:{}", age_corr);
     println!("sibsp_corr:{}", sibsp_corr);
@@ -137,12 +176,12 @@ embarked_q_corr:0.0036503826839721647
 embarked_s_corr:-0.14968272327068557
 ```
 
-- 상관관계를 통해 어느것을 사용할지 선택
+- 상관관계를 통해 몇개를 0.16이하는 관계가 없다 판단하여 제거해줍니다.
 
 ## model 적용
-
+- Knn:0.8086124401913876
 - Random_Forest:0.8851674641148325
-
+- 둘중이 Random_Forest가 점수가 더 높기에 Random_Forest으로 Kaggle에 제출합니다.
 ## result
 
 - 10024/16008 기록
