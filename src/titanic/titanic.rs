@@ -1,3 +1,4 @@
+use polars::prelude::cov::pearson_corr;
 use polars::prelude::*;
 use polars::prelude::{CsvWriter, DataFrame, NamedFrom, SerWriter, Series};
 use polars_lazy::dsl::col;
@@ -7,7 +8,6 @@ use smartcore::ensemble::random_forest_classifier::{
 use smartcore::linalg::basic::matrix::DenseMatrix;
 use smartcore::metrics::*;
 use std::fs::File;
- 
 pub fn main() {
     /*===================data========================= */
     //필요없는 PassegerId,Name,Ticket제거
@@ -20,7 +20,7 @@ pub fn main() {
         .unwrap()
         .finish()
         .unwrap()
-        .drop_many(&["PassengerId","Name", "Ticket"]);
+        .drop_many(&["PassengerId", "Name", "Ticket"]);
 
     let submission_df = CsvReader::from_path("./datasets/titanic/gender_submission.csv")
         .unwrap()
@@ -30,6 +30,7 @@ pub fn main() {
     println!("데이터 미리보기:{}", train_df.head(None));
     println!("데이터 정보 확인:{:?}", train_df.schema());
     println!("null확인:{:?}", train_df.null_count());
+
     /*
     범주형 : Survived, Sex, Embarkd / PClass
     수치형 : SibSp, Parch / Age, Fare
@@ -86,7 +87,7 @@ pub fn main() {
         .unwrap()
         .drop(&"Pclass")
         .unwrap();
-  
+
     /*sex */
     let sex_train_dummies: DataFrame = train_df
         .select(["Sex"])
@@ -130,7 +131,182 @@ pub fn main() {
         .unwrap()
         .drop(&"Embarked")
         .unwrap();
-    println!("{}",train_df.tail(Some(3)));
+    println!("{}", train_df.tail(Some(3)));
+    println!("{:?}", train_df.schema());
+  /*=== 상관 관계 확인 ==== */
+    let age_corr = pearson_corr(
+        train_df.column("Age").unwrap().f64().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+
+    let sibsp_corr = pearson_corr(
+        train_df.column("SibSp").unwrap().i64().unwrap(),
+        train_df.column("Survived").unwrap().i64().unwrap(),
+        1,
+    )
+    .unwrap();
+
+    let parch_corr = pearson_corr(
+        train_df.column("Parch").unwrap().i64().unwrap(),
+        train_df.column("Survived").unwrap().i64().unwrap(),
+        1,
+    )
+    .unwrap();
+let fare_corr = pearson_corr(
+    train_df.column("Fare").unwrap().f64().unwrap(),
+    train_df.column("Survived").unwrap().i64().unwrap().cast(&DataType::Float64).unwrap().f64().unwrap(),
+    1,
+)
+.unwrap();
+    let pclass_1_corr = pearson_corr(
+        train_df.column("Pclass_1").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+    let pclass_2_corr = pearson_corr(
+        train_df.column("Pclass_2").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+    let pclass_3_corr = pearson_corr(
+        train_df.column("Pclass_3").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+
+    let sex_female_corr = pearson_corr(
+        train_df.column("Sex_female").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+    let sex_male_corr = pearson_corr(
+        train_df.column("Sex_male").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+    let embarked_c_corr = pearson_corr(
+        train_df.column("Embarked_C").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+    let embarked_q_corr = pearson_corr(
+        train_df.column("Embarked_Q").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+    let embarked_s_corr = pearson_corr(
+        train_df.column("Embarked_S").unwrap().i32().unwrap(),
+        train_df
+            .column("Survived")
+            .unwrap()
+            .i64()
+            .unwrap()
+            .cast(&DataType::Int32)
+            .unwrap()
+            .i32()
+            .unwrap(),
+        1,
+    )
+    .unwrap();
+
+
+    println!("age_corr:{}", age_corr);
+    println!("sibsp_corr:{}", sibsp_corr);
+    println!("parch_corr:{}", parch_corr);
+    println!("fare_corr:{}", fare_corr);
+    println!("pclass_1_corr:{}", pclass_1_corr);
+    println!("pclass_2_corr:{}", pclass_2_corr);
+    println!("pclass_3_corr:{}", pclass_3_corr);
+    println!("sex_female_corr:{}", sex_female_corr);
+    println!("sex_male_corr:{}", sex_male_corr);
+    println!("embarked_c_corr:{}", embarked_c_corr);
+    println!("embarked_q_corr:{}", embarked_q_corr);
+    println!("embarked_s_corr:{}", embarked_s_corr);
+
+    /*======0.2이상 ======= */
+    //pclass_1_corr:0.2859037677837427
+    //pclass_3_corr:-0.3223083573729699
+    //sex_female_corr:0.5433513806577552
+    //sex_male_corr:-0.5433513806577551
+    //embarked_c_corr:0.16824043121823315
+    //embarked_s_corr:-0.14968272327068557
+     //Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S","Survived
+     let train_df= train_df.select(["Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S","Survived"]).unwrap();
+     let test_df: DataFrame= test_df.select(["Pclass_1","Pclass_3","Fare","Sex_female","Sex_male","Embarked_C","Embarked_S"]).unwrap();
+
     /*data 변환 */
     //target_data
     let y_train = train_df.column("Survived").unwrap();
@@ -168,7 +344,7 @@ pub fn main() {
     let random_forest = RandomForestClassifier::fit(
         &x_train,
         &y_train,
-        RandomForestClassifierParameters::default().with_n_trees(42),
+        RandomForestClassifierParameters::default().with_n_trees(100),
     )
     .unwrap();
     let y_pred: Vec<i32> = random_forest.predict(&x_test).unwrap();
