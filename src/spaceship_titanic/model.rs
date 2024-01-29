@@ -131,24 +131,259 @@ pub fn main() {
 
     let train_df = train_df.drop("HomePlanet_Mars").unwrap();
     let test_df = test_df.drop("HomePlanet_Mars").unwrap();
-    println!("schema:{:?}", train_df.schema());
+
     /*========CryoSleep======= */
     //상관 관계 확인
     let cryo_sleep_corr = pearson_corr(
         train_df.column("CryoSleep").unwrap().f64().unwrap(),
-        train_df.column("Transported").unwrap().i32().unwrap().cast(&DataType::Float64).unwrap().f64().unwrap(),
+        train_df
+            .column("Transported")
+            .unwrap()
+            .i32()
+            .unwrap()
+            .cast(&DataType::Float64)
+            .unwrap()
+            .f64()
+            .unwrap(),
         1,
     )
     .unwrap();
     println!("{}", cryo_sleep_corr); //0.46013235785425843
-    //상관 관계가 높은것으로 판단댐
-
+                                     //상관 관계가 높은것으로 판단댐
 
     /*========Cabin======= */
+    //Cabin / 따라 나누기
+    let train_df = train_df
+        .clone()
+        .lazy()
+        .with_columns([
+            col("Cabin")
+                .str()
+                .split(lit("/"))
+                .list()
+                .get(lit(0))
+                .alias("Cabin_1"),
+            col("Cabin")
+                .str()
+                .split(lit("/"))
+                .list()
+                .get(lit(1))
+                .alias("Cabin_2")
+                .cast(DataType::Float64),
+            col("Cabin")
+                .str()
+                .split(lit("/"))
+                .list()
+                .get(lit(2))
+                .alias("Cabin_3"),
+            col("VIP").cast(DataType::Int64),
+            col("CryoSleep").cast(DataType::Int64),
+        ])
+        .collect()
+        .unwrap()
+        .drop("Cabin")
+        .unwrap();
 
-    
+    let test_df: DataFrame = test_df
+        .clone()
+        .lazy()
+        .with_columns([
+            col("Cabin")
+                .str()
+                .split(lit("/"))
+                .list()
+                .get(lit(0))
+                .alias("Cabin_1"),
+            col("Cabin")
+                .str()
+                .split(lit("/"))
+                .list()
+                .get(lit(1))
+                .alias("Cabin_2")
+                .cast(DataType::Float64),
+            col("Cabin")
+                .str()
+                .split(lit("/"))
+                .list()
+                .get(lit(2))
+                .alias("Cabin_3"),
+            col("VIP").cast(DataType::Int64),
+            col("CryoSleep").cast(DataType::Int64),
+        ])
+        .collect()
+        .unwrap()
+        .drop("Cabin")
+        .unwrap();
+
+    let train_cabin_1 = train_df
+        .select(["Cabin_1"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+
+    let test_cabin_1 = test_df
+        .select(["Cabin_1"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+    let train_df = train_df
+        .hstack(train_cabin_1.get_columns())
+        .unwrap()
+        .drop("Cabin_1")
+        .unwrap();
+    let test_df = test_df
+        .hstack(test_cabin_1.get_columns())
+        .unwrap()
+        .drop("Cabin_1")
+        .unwrap();
+    //상관 관계확인
+
+    println!("head:{:?}", train_df.schema());
+    /*========Cabin_1======= */
+
+    let cabin_1_a_corr = pearson_corr(
+        train_df.column("Cabin_1_A").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_b_corr = pearson_corr(
+        train_df.column("Cabin_1_B").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_c_corr = pearson_corr(
+        train_df.column("Cabin_1_C").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_d_corr = pearson_corr(
+        train_df.column("Cabin_1_D").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_e_corr = pearson_corr(
+        train_df.column("Cabin_1_E").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_f_corr = pearson_corr(
+        train_df.column("Cabin_1_F").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_g_corr = pearson_corr(
+        train_df.column("Cabin_1_G").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let cabin_1_t_corr = pearson_corr(
+        train_df.column("Cabin_1_T").unwrap().i32().unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+
+    println!("cabin_1_a_corr:{}", cabin_1_a_corr);
+    println!("cabin_1_b_corr:{}", cabin_1_b_corr);
+    println!("cabin_1_c_corr:{}", cabin_1_c_corr);
+    println!("cabin_1_d_corr:{}", cabin_1_d_corr);
+    println!("cabin_1_e_corr:{}", cabin_1_e_corr);
+    println!("cabin_1_f_corr:{}", cabin_1_f_corr);
+    println!("cabin_1_g_corr:{}", cabin_1_g_corr);
+    println!("cabin_1_t_corr:{}", cabin_1_t_corr);
+
+    //상관관계 낮은 값 삭제
+
+    let train_df = train_df.drop_many(&[
+        "Cabin_1_A",
+        "Cabin_1_D",
+        "Cabin_1_E",
+        "Cabin_1_F",
+        "Cabin_1_T",
+    ]);
+    let test_df: DataFrame = test_df.drop_many(&[
+        "Cabin_1_A",
+        "Cabin_1_D",
+        "Cabin_1_E",
+        "Cabin_1_F",
+        "Cabin_1_T",
+    ]);
+    println!("schema:{:?}", train_df.schema());
     /*========Destination======= */
+
+    let train_destination = train_df
+        .select(["Destination"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+
+    let test_destination = test_df
+        .select(["Destination"])
+        .unwrap()
+        .to_dummies(None, false)
+        .unwrap();
+    let train_df = train_df
+        .hstack(train_destination.get_columns())
+        .unwrap()
+        .drop("Destination")
+        .unwrap();
+    let test_df = test_df
+        .hstack(test_destination.get_columns())
+        .unwrap()
+        .drop("Destination")
+        .unwrap();
+    println!("schema:{:?}", train_df.schema());
+
+    let destination_55_corr = pearson_corr(
+        train_df
+            .column("Destination_55 Cancri e")
+            .unwrap()
+            .i32()
+            .unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let destination_pro_corr = pearson_corr(
+        train_df
+            .column("Destination_PSO J318.5-22")
+            .unwrap()
+            .i32()
+            .unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+    let destination_trrappist_corr = pearson_corr(
+        train_df
+            .column("Destination_TRAPPIST-1e")
+            .unwrap()
+            .i32()
+            .unwrap(),
+        train_df.column("Transported").unwrap().i32().unwrap(),
+        1,
+    )
+    .unwrap();
+
+    println!("destination_55_corr:{}", destination_55_corr);
+    println!("destination_pro_corr:{}", destination_pro_corr);
+    println!("destination_trrappist_corr:{}", destination_trrappist_corr);
+     
+
+    let train_df= train_df.drop_many(&["Destination_PSO J318.5-22","Destination_TRAPPIST-1e"]);
+    let test_df= test_df.drop_many(&["Destination_PSO J318.5-22","Destination_TRAPPIST-1e"]);
+
     /*========Age======= */
+
+    println!("AGE:{}",train_df.column("Age").unwrap());
+
     /*========VIP======= */
     /*========RoomService======= */
     /*========FoodCourt======= */
