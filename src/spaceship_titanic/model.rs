@@ -1,3 +1,4 @@
+use ndarray::prelude::*;
 use polars::prelude::cov::pearson_corr;
 use polars::{
     lazy::dsl::{col, when},
@@ -11,6 +12,7 @@ use smartcore::{
     ensemble::random_forest_classifier::RandomForestClassifier,
 };
 use std::fs::File;
+use xgboost::{parameters, Booster, DMatrix};
 pub fn main() {
     /*===================data 불러오기========================= */
 
@@ -124,10 +126,10 @@ pub fn main() {
     )
     .unwrap();
 
-    println!("{}", homeplanet_earth_corr); //-0.16884536382739204
-    println!("{}", homeplanet_europa_corr); //0.17691648731695503
-    println!("{}", homeplanet_mars_corr); //0.019543527194644604
-                                          //mars는 019543527194644604 이므로 상관관계가 낮다고 판단 삭제
+    println!("homeplanet_earth_corr:{}", homeplanet_earth_corr); //-0.16884536382739204
+    println!("homeplanet_europa_corr:{}", homeplanet_europa_corr); //0.17691648731695503
+    println!("homeplanet_mars_corr:{}", homeplanet_mars_corr); //0.019543527194644604
+                                                               //mars는 019543527194644604 이므로 상관관계가 낮다고 판단 삭제
 
     let train_df = train_df.drop("HomePlanet_Mars").unwrap();
     let test_df = test_df.drop("HomePlanet_Mars").unwrap();
@@ -306,6 +308,7 @@ pub fn main() {
         "Cabin_1_D",
         "Cabin_1_E",
         "Cabin_1_F",
+        "Cabin_1_G",
         "Cabin_1_T",
     ]);
     let test_df: DataFrame = test_df.drop_many(&[
@@ -313,6 +316,7 @@ pub fn main() {
         "Cabin_1_D",
         "Cabin_1_E",
         "Cabin_1_F",
+        "Cabin_1_G",
         "Cabin_1_T",
     ]);
     //Cabin_2
@@ -371,10 +375,10 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("Cabin_3_P:{:?}", cabin_3_p_corr);
-    println!("Cabin_3_S:{:?}", cabin_3_s_corr);
-    //관련이 잇다고 판단
-    /*========Destination======= */
+    println!("Cabin_3_P:{:?}", cabin_3_p_corr); //-0.10139736578441827
+    println!("Cabin_3_S:{:?}", cabin_3_s_corr); //Cabin_3_S:0.10139736578441827
+                                                //관련이 잇다고 판단
+                                                /*========Destination======= */
 
     let train_destination = train_df
         .select(["Destination"])
@@ -502,7 +506,7 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("{}", age_corr);
+    println!("AGE:{}", age_corr); //-0.07224064408121686
 
     //나이는 관련 없는것으로 판단
     let train_df = train_df.drop("Age").unwrap();
@@ -525,7 +529,7 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("{}", vip_corr);
+    println!("VIP:{}", vip_corr);
     let train_df = train_df.drop("VIP").unwrap();
     let test_df = test_df.drop("VIP").unwrap();
     /*========RoomService======= */
@@ -544,9 +548,9 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("RoomService:{}", room_service_corr);
-    //관련 있는것으로 판단
-    /*========FoodCourt======= */
+    println!("RoomService:{}", room_service_corr); //-0.24112357990296235
+                                                   //관련 있는것으로 판단
+                                                   /*========FoodCourt======= */
     let food_court_corr = pearson_corr(
         train_df
             .column("FoodCourt")
@@ -581,7 +585,7 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("ShoppingMall:{}", shopping_mall_corr);
+    println!("ShoppingMall:{}", shopping_mall_corr); //:0.009391027784015397
     let train_df = train_df.drop("ShoppingMall").unwrap();
     let test_df = test_df.drop("ShoppingMall").unwrap();
     //관련 없는 것으로 판단 제거
@@ -601,9 +605,9 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("Spa:{}", spa_corr);
-    //어느정도 관련이 있는것으로 판단
-    /*========VRDeck======= */
+    println!("Spa:{}", spa_corr); //-0.21854462654893322
+                                  //어느정도 관련이 있는것으로 판단
+                                  /*========VRDeck======= */
     println!("VRDeck:{}", train_df.column("VRDeck").unwrap());
     let vr_deck_corr = pearson_corr(
         train_df
@@ -619,9 +623,9 @@ pub fn main() {
         1,
     )
     .unwrap();
-    println!("VRDeck:{}", vr_deck_corr);
-    //어느정도 관련이 있는것으로 판단
-    /*========Name======= */
+    println!("VRDeck:{}", vr_deck_corr); //-0.20487369065784677
+                                         //어느정도 관련이 있는것으로 판단
+                                         /*========Name======= */
     println!("Name:{}", train_df.column("Name").unwrap());
     let train_df = train_df.drop("Name").unwrap();
     let test_df = test_df.drop("Name").unwrap();
@@ -633,8 +637,7 @@ pub fn main() {
         .unwrap()
         .cast(&DataType::Int32)
         .unwrap()
-        .i32()
-        .unwrap()
+        .i32().unwrap()
         .into_no_null_iter()
         .collect::<Vec<i32>>();
     let y_train = train_df
@@ -642,6 +645,7 @@ pub fn main() {
         .unwrap()
         .i32()
         .unwrap()
+        .cast(&DataType::Int32).unwrap().i32().unwrap()
         .into_no_null_iter()
         .collect::<Vec<i32>>();
     let x_train = train_df
@@ -665,6 +669,42 @@ pub fn main() {
     }
     let x_train = DenseMatrix::from_2d_vec(&x_train_vec);
     let x_test: DenseMatrix<f64> = DenseMatrix::from_2d_vec(&x_test_vec);
+    // println!("{:?}", x_train.shape());
+    // println!("{:?}", x_test.shape());
+
+    // let x_train: ArrayBase<ndarray::OwnedRepr<f32>, Dim<[usize; 1]>> =
+    //     x_train.into_shape(8693 * 11).unwrap();
+    // let x_train: Vec<f32> = x_train.into_iter().collect();
+
+    // let x_test: ArrayBase<ndarray::OwnedRepr<f32>, Dim<[usize; 1]>> =
+    //     x_test.into_shape(4277 * 11).unwrap();
+    // let x_test: Vec<f32> = x_test.into_iter().collect();
+
+    // let mut dtrain = DMatrix::from_dense(&x_train, 8693).unwrap();
+    // dtrain.set_labels(&y_train).unwrap();
+    // let mut dtest = DMatrix::from_dense(&x_test, 4277).unwrap();
+    // dtest.set_labels(&y_test).unwrap();
+
+    // let evaluation_sets = &[(&dtrain, "train"), (&dtest, "test")];
+
+    // let training_params = parameters::TrainingParametersBuilder::default()
+    //     .dtrain(&dtrain)
+    //     .evaluation_sets(Some(evaluation_sets))
+    //     .build()
+    //     .unwrap();
+
+    // let bst = Booster::train(&training_params).unwrap();
+    // let y = bst.predict(&dtest).unwrap();
+    // let y: Vec<f64> = y.iter().map(|x| *x as f64).collect();
+    // let yhat= y.into_iter().map(|x|if x>0.49999f64 {
+    //     return 1.0 as i32
+    // }else{
+    //     return 0.0 as i32
+    // }).collect::<Vec<i32>>();
+
+    // println!("{:?}", yhat);
+
+   
     let pca_x_train: PCA<f64, DenseMatrix<f64>> = PCA::fit(
         &x_train,
         PCAParameters::default().with_n_components(train_df.drop("Transported").unwrap().shape().1),
@@ -686,12 +726,12 @@ pub fn main() {
         RandomForestClassifierParameters::default().with_n_trees(100),
     )
     .unwrap();
-    let y_hat: Vec<i32> = pca_model.predict(&pca_x_test).unwrap(); // use the same data for prediction
+    let y_hat: Vec<i32> = pca_model.predict(&x_test).unwrap(); // use the same data for prediction
     let acc: f64 = ClassificationMetricsOrd::accuracy().get_score(&y_test, &y_hat);
     println!("{}", acc);
     /*=====제출===== */
     let transported_series = Series::new("Transported", y_hat.into_iter().collect::<Vec<i32>>())
-        .cast(&DataType::String)
+        .cast(&DataType::Boolean)
         .unwrap();
     let passenger_id_series = submission_df.column("PassengerId").unwrap().clone();
 
