@@ -16,7 +16,7 @@ use rayon::prelude::*;
 fn main() {
     // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();
-    spaceship_titanic::model::main();
+    // spaceship_titanic::model::main();
     // house_price::model::main();
     // store_sales::model::main();
     // binary_classification_with_a_bank_churn_dataset::model::main();
@@ -24,7 +24,7 @@ fn main() {
     // forecasting_mini_cource_sales::model::main();
     // data_science_london::model::main();
     // icr_identifying_age_related_conditions::model::main();
-    // digit_recognizer::model::main();
+    digit_recognizer::model::main();
     // facial_keypoints_detection::model::main();
     // natural_language_processing_with_disaster_tweets::model::main();
     // binary_prediction_of_smoker_status_using_bio_signals::model::main();
