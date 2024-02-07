@@ -122,7 +122,6 @@ pub struct ModelConfig {
 }
 impl DiabetesDataset {
     pub fn test_data() -> Self {
-        println!("{}", "test지");
         let test_df = CsvReader::from_path("./datasets/digit-recognizer/test.csv")
             .unwrap()
             .finish()

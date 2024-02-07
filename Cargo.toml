@@ -31,5 +31,3 @@ serde-big-array = "0.5.1"
 serde_derive = "1.0.195"
 rayon = "1.8.1"
 
-[profile.dev]
-opt-level = 3
