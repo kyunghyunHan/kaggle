@@ -203,7 +203,7 @@ impl<B: Backend> Batcher<PenguinsData, Test<B>> for Tester<B> {
             .map(|item| Data::<f64, 1>::from(item.train_datas))
             .map(|data| Tensor::<B, 1>::from_data(data.convert()))
             .map(|tensor| tensor.reshape([1, WIDTH]))
-            .map(|tensor| ((tensor / 255) - 0.1307) / 0.3081)
+            // .map(|tensor| ((tensor / 255) - 0.1307) / 0.3081)
             .collect();
         let targets = items
             .iter()
@@ -218,16 +218,17 @@ impl<B: Backend> Batcher<PenguinsData, Test<B>> for Tester<B> {
     }
 }
 //274개,
+//
 #[derive(Config)]
 pub struct TrainingConfig {
     pub model: ModelConfig,
     pub optimizer: AdamConfig,//Adam사용
-    #[config(default = 3)]
+    #[config(default = 10)]
     pub num_epochs: usize,//epoch
     #[config(default = 32)]
     pub batch_size: usize,//배치사이즈
-    #[config(default = 4)]//작업자의 수?
-    pub num_workers: usize,
+    #[config(default = 10)]
+    pub num_workers: usize,//species
     #[config(default = 42)]
     pub seed: u64,//난수 생성
     #[config(default = 1.0e-4)]

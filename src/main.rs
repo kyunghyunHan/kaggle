@@ -14,7 +14,9 @@ mod natural_language_processing_with_disaster_tweets;
 mod binary_prediction_of_smoker_status_using_bio_signals;
 mod penguins_binary_classification;
 use rayon::prelude::*;
+mod image_classifications;
 fn main() {
+    image_classifications::model::main();
     // titanic::titanic::main();
     // price_prediction_for_used_cars::model::main();
     // spaceship_titanic::model::main();
@@ -29,6 +31,6 @@ fn main() {
     // facial_keypoints_detection::model::main();
     // natural_language_processing_with_disaster_tweets::model::main();
     // binary_prediction_of_smoker_status_using_bio_signals::model::main();
-    penguins_binary_classification::model::main();//이진 분류를 위한 펭귄
+    // penguins_binary_classification::model::main();//이진 분류를 위한 펭귄
     
 }
