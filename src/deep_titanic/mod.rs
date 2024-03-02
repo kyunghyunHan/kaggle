@@ -1,5 +1,6 @@
 pub mod model {
     use polars::prelude::*;
+    use candle_core::prelude::*;
 
     struct model {}
     impl model {}
@@ -25,6 +26,8 @@ pub mod model {
                 .unwrap()
                 .finish()
                 .unwrap();
+            
+            //Tensor로 변경
         }
     }
     pub fn main() {

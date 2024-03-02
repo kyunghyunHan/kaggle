@@ -14,4 +14,4 @@ polars = { version = "0.36.2", features = ["ndarray","to_dummies","lazy","descri
 polars-lazy = { version = "0.36.2", features = [] }
 xgboost = "0.1.4"
 rayon = "1.8.1"
-
+candle-core = "0.4.1"
