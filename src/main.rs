@@ -3,5 +3,5 @@ mod titanic;
 mod digit_recognizer;
 use rayon::prelude::*;
 fn main() {
-    deep_titanic::model::main();
+    deep_titanic::model::main().unwrap();
 }

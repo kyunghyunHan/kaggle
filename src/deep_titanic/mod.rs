@@ -4,10 +4,10 @@ pub mod model {
     use polars::prelude::cov::pearson_corr;
     use polars::prelude::*;
     const IMAGE_DIM: usize = 7; //2차원 벡터
-    const RESULTS: usize = 2; //모델이; 예측하는 개수
+    const RESULTS: usize = 1; //모델이; 예측하는 개수
     const EPOCHS: usize = 10; //에폭
-    const LAYER1_OUT_SIZE: usize = 4; //첫번쨰 출력충의 출력뉴런 수
-    const LAYER2_OUT_SIZE: usize = 2; //2번쨰 츨략층의  출력 뉴런 수
+    const LAYER1_OUT_SIZE: usize = 16 ; //첫번쨰 출력충의 출력뉴런 수
+    const LAYER2_OUT_SIZE: usize = 8; //2번쨰 츨략층의  출력 뉴런 수
     const LEARNING_RATE: f64 = 0.05;
 
   
@@ -393,24 +393,23 @@ pub mod model {
                 test_buffer_images.push(i as u32)
             }
             let test_datas =
-                (Tensor::from_vec(test_buffer_images, (test_samples, 7), &Device::Cpu)?
-                    .to_dtype(DType::F32)?
-                    / 255.)?;
+                Tensor::from_vec(test_buffer_images, (test_samples, 7), &Device::Cpu)?
+                    .to_dtype(DType::F32)?;
 
             let x_train = train_df
                 .drop("Survived")
                 .unwrap()
                 .to_ndarray::<Int64Type>(IndexOrder::Fortran)
                 .unwrap();
+            
             let mut train_buffer_images: Vec<u32> = Vec::with_capacity(train_samples * 7);
             for i in x_train {
                 train_buffer_images.push(i as u32)
             }
             let train_datas =
-                (Tensor::from_vec(train_buffer_images, (train_samples, 7), &Device::Cpu)?
-                    .to_dtype(DType::F32)?
-                    / 255.)?;
-
+                Tensor::from_vec(train_buffer_images, (train_samples, 7), &Device::Cpu)?
+                    .to_dtype(DType::F32)?;
+              
             Ok(Self {
                 train_datas: train_datas,
                 train_labels: train_labels,
