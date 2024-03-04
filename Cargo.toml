@@ -15,3 +15,7 @@ polars-lazy = { version = "0.36.2", features = [] }
 xgboost = "0.1.4"
 rayon = "1.8.1"
 candle-core = "0.4.1"
+candle-nn = "0.4.1"
+tokio = { version = "1.36.0", features = ["full"] }
+
+anyhow = "1.0.80"
