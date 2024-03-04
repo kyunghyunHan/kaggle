@@ -5,10 +5,10 @@ pub mod model {
     use polars::prelude::*;
     const IMAGE_DIM: usize = 7; //2차원 벡터
     const RESULTS: usize = 1; //모델이; 예측하는 개수
-    const EPOCHS: usize = 10; //에폭
-    const LAYER1_OUT_SIZE: usize = 16 ; //첫번쨰 출력충의 출력뉴런 수
-    const LAYER2_OUT_SIZE: usize = 8; //2번쨰 츨략층의  출력 뉴런 수
-    const LEARNING_RATE: f64 = 0.05;
+    const EPOCHS: usize = 100; //에폭
+    const LAYER1_OUT_SIZE: usize = 4 ; //첫번쨰 출력충의 출력뉴런 수
+    const LAYER2_OUT_SIZE: usize = 2; //2번쨰 츨략층의  출력 뉴런 수
+    const LEARNING_RATE: f64 = 0.02;
 
   
     #[derive(Clone, Debug)]
@@ -56,14 +56,7 @@ pub mod model {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let train_lebels = train_df
-                .column("Survived")
-                .unwrap()
-                .i64()
-                .unwrap()
-                .into_no_null_iter()
-                .map(|x| x as u32)
-                .collect::<Vec<u32>>();
+          
             println!("{}", train_df.null_count());
             println!("{}", test_df.null_count());
             println!("{}", submission_df.null_count());
@@ -383,7 +376,8 @@ pub mod model {
                 .map(|x| x as u32)
                 .collect::<Vec<u32>>();
 
-            let train_labels = Tensor::from_vec(labels, (train_samples,), &Device::Cpu)?;
+            let train_labels = Tensor::from_vec(labels, train_samples, &Device::Cpu)?;
+
             let test_labels = Tensor::from_vec(test_labels, (test_samples,), &Device::Cpu)?;
             let x_test = test_df
                 .to_ndarray::<Int64Type>(IndexOrder::Fortran)
@@ -461,35 +455,40 @@ pub mod model {
     pub async fn main() -> anyhow::Result<()> {
         let dev = Device::cuda_if_available(0)?;
         let m = Dataset::new()?;
-        let trained_model: MultiLevelPerceptron;
-        loop {
-            println!("Trying to train neural network.");
-            match train(m.clone(), &dev) {
-                Ok(model) => {
-                    trained_model = model;
-                    break;
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                    continue;
-                }
-            }
-        }
-        //추정
-        let real_world_votes: Vec<u32> = vec![13, 22];
+        println!("{:?}",m.train_datas.shape());
+        println!("{:?}",m.test_datas.shape());
+        println!("{:?}",m.train_labels.shape());
+        println!("{:?}",m.test_labels.shape());
+        // let trained_model: MultiLevelPerceptron;
 
-        let tensor_test_votes = Tensor::from_vec(real_world_votes.clone(), (1, IMAGE_DIM), &dev)?
-            .to_dtype(DType::F32)?;
+        // loop {
+        //     println!("Trying to train neural network.");
+        //     match train(m.clone(), &dev) {
+        //         Ok(model) => {
+        //             trained_model = model;
+        //             break;
+        //         }
+        //         Err(e) => {
+        //             println!("Error: {}", e);
+        //             continue;
+        //         }
+        //     }
+        // }
+        // //추정
+        // let real_world_votes: Vec<u32> = vec![13, 22];
 
-        let final_result = trained_model.forward(&tensor_test_votes)?;
+        // let tensor_test_votes = Tensor::from_vec(real_world_votes.clone(), (1, IMAGE_DIM), &dev)?
+        //     .to_dtype(DType::F32)?;
 
-        let result = final_result
-            .argmax(D::Minus1)?
-            .to_dtype(DType::F32)?
-            .get(0)
-            .map(|x| x.to_scalar::<f32>())??;
-        println!("real_life_votes: {:?}", real_world_votes);
-        println!("neural_network_prediction_result: {:?}", result);
+        // let final_result = trained_model.forward(&tensor_test_votes)?;
+
+        // let result = final_result
+        //     .argmax(D::Minus1)?
+        //     .to_dtype(DType::F32)?
+        //     .get(0)
+        //     .map(|x| x.to_scalar::<f32>())??;
+        // println!("real_life_votes: {:?}", real_world_votes);
+        // println!("neural_network_prediction_result: {:?}", result);
         Ok(())
     }
 }
