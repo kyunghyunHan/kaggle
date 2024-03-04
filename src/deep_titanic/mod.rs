@@ -10,8 +10,7 @@ pub mod model {
     const LAYER2_OUT_SIZE: usize = 2; //2번쨰 츨략층의  출력 뉴런 수
     const LEARNING_RATE: f64 = 0.05;
 
-    struct model {}
-    impl model {}
+  
     #[derive(Clone, Debug)]
     struct Dataset {
         pub train_datas: Tensor, //train data
