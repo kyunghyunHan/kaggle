@@ -1,6 +1,6 @@
 pub mod model {
-    use polars::prelude::*;
     use candle_core::{DType, Device, Result, Tensor, D};
+    use polars::prelude::*;
 
     struct model {}
     impl model {}
@@ -12,7 +12,9 @@ pub mod model {
         pub test_labels: Tensor,
     }
     impl Dataset {
-        fn new(){
+        fn new() {
+            let train_samples = 42_000;
+            let test_samples = 28_000;
             //데이터 불러오기
             let train_df = CsvReader::from_path("./datasets/titanic/train.csv")
                 .unwrap()
@@ -22,22 +24,33 @@ pub mod model {
                 .unwrap()
                 .finish()
                 .unwrap();
-            let submisstion_df = CsvReader::from_path("./datasets/titanic/gender_submission.csv")
+            let submission_df = CsvReader::from_path("./datasets/titanic/gender_submission.csv")
                 .unwrap()
                 .finish()
                 .unwrap();
-            
-             //Tensor로 변경
-             //train label
-             //train tensor
-             //test label
-             //testtensor
+            let train_lebels = train_df
+                .column("Survived")
+                .unwrap()
+                .i64()
+                .unwrap()
+                .into_no_null_iter()
+                .map(|x| x as u8)
+                .collect::<Vec<u8>>();
+            println!("{}",train_df.null_count());
+            println!("{}",test_df.null_count());
+            println!("{}",submission_df.null_count());
 
-             println!("{:?}",train_df.shape());
-            
+
+            //Tensor로 변경
+            //train label
+            //train tensor
+            //test label
+            //testtensor
+
+            println!("{:?}", train_df.shape());
         }
     }
     pub fn main() {
-       Dataset::new();
+        Dataset::new();
     }
 }
