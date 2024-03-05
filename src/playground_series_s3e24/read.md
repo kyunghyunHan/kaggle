@@ -1,8 +1,15 @@
-# PlayGround Seris S3e24
-- 흡연자 이진분류
+# Mnist
+
 ## Dataset
-
-- [데이터셋](../../datasets/playground-series-s3e24/train.csv)
-
+ - [Dataset](https://www.kaggle.com/competitions/titanic/data)
 
 ## 데이터 불러오기
+
+## 전처리
+
+## 학습
+
+## Test
+
+
+## CSV 저장하기
