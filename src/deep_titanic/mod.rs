@@ -1,14 +1,17 @@
 pub mod model {
     use candle_core::{DType, Device, Result, Tensor, D};
-    use candle_nn::{loss, ops, Linear, Module, Optimizer, VarBuilder, VarMap};
+    use candle_nn::ops::dropout;
+    use candle_nn::{loss, ops, Linear, Module, Optimizer, VarBuilder,ModuleT, VarMap,Dropout};
     use polars::prelude::cov::pearson_corr;
     use polars::prelude::*;
-    const IMAGE_DIM: usize = 7; //2차원 벡터
+    const DATADIM: usize = 7; //2차원 벡터
     const RESULTS: usize = 1; //모델이; 예측하는 개수
-    const EPOCHS: usize = 100; //에폭
-    const LAYER1_OUT_SIZE: usize = 4 ; //첫번쨰 출력충의 출력뉴런 수
-    const LAYER2_OUT_SIZE: usize = 2; //2번쨰 츨략층의  출력 뉴런 수
-    const LEARNING_RATE: f64 = 0.02;
+    const EPOCHS: usize = 800; //에폭
+    const LAYER1_OUT_SIZE: usize = 512 ; //첫번쨰 출력충의 출력뉴런 수
+    const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
+    const LAYER3_OUT_SIZE: usize = 128; //2번쨰 츨략층의  출력 뉴런 수
+
+    const LEARNING_RATE: f64 = 0.001;
 
   
     #[derive(Clone, Debug)]
@@ -22,21 +25,33 @@ pub mod model {
         ln1: Linear,
         ln2: Linear, //은닉충
         ln3: Linear, //출력충
+        ln4: Linear, //출력충
+
+        dropout:Dropout
     }
     //3개 => 2개의 은닉충 1개의 출력충
     impl MultiLevelPerceptron {
         fn new(vs: VarBuilder) -> candle_core::Result<Self> {
-            let ln1 = candle_nn::linear(IMAGE_DIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
+            let ln1 = candle_nn::linear(DATADIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
             let ln2 = candle_nn::linear(LAYER1_OUT_SIZE, LAYER2_OUT_SIZE, vs.pp("ln2"))?;
-            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1, vs.pp("ln3"))?;
-            Ok(Self { ln1, ln2, ln3 })
+            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, LAYER3_OUT_SIZE , vs.pp("ln3"))?;
+            let ln4 = candle_nn::linear(LAYER3_OUT_SIZE, RESULTS + 1, vs.pp("ln4"))?;
+            let dropout = candle_nn::Dropout::new(0.5);
+
+            Ok(Self { ln1, ln2, ln3,ln4,dropout })
         }
         fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
             let xs = self.ln1.forward(xs)?;
             let xs = xs.relu()?;
+            let xs= self.dropout.forward_t(&xs, true)?;
             let xs = self.ln2.forward(&xs)?;
             let xs = xs.relu()?;
-            self.ln3.forward(&xs)
+            let xs= self.dropout.forward_t(&xs, true)?;
+            let xs = self.ln3.forward(&xs)?;
+            let xs = xs.relu()?;
+            let xs= self.dropout.forward_t(&xs, true)?;
+            let xs = self.ln4.forward(&xs)?;
+            xs.silu()
         }
     }
     impl Dataset {
@@ -441,7 +456,7 @@ pub mod model {
                 loss.to_scalar::<f32>()?,
                 final_accuracy
             );
-            if final_accuracy == 100.0 {
+            if final_accuracy > 100.0 {
                 break;
             }
         }
@@ -459,36 +474,36 @@ pub mod model {
         println!("{:?}",m.test_datas.shape());
         println!("{:?}",m.train_labels.shape());
         println!("{:?}",m.test_labels.shape());
-        // let trained_model: MultiLevelPerceptron;
+        let trained_model: MultiLevelPerceptron;
 
-        // loop {
-        //     println!("Trying to train neural network.");
-        //     match train(m.clone(), &dev) {
-        //         Ok(model) => {
-        //             trained_model = model;
-        //             break;
-        //         }
-        //         Err(e) => {
-        //             println!("Error: {}", e);
-        //             continue;
-        //         }
-        //     }
-        // }
-        // //추정
-        // let real_world_votes: Vec<u32> = vec![13, 22];
+        loop {
+            println!("Trying to train neural network.");
+            match train(m.clone(), &dev) {
+                Ok(model) => {
+                    trained_model = model;
+                    break;
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    continue;
+                }
+            }
+        }
+        //추정
+        let real_world_votes: Vec<u32> = vec![13, 22];
 
-        // let tensor_test_votes = Tensor::from_vec(real_world_votes.clone(), (1, IMAGE_DIM), &dev)?
-        //     .to_dtype(DType::F32)?;
+        let tensor_test_votes = Tensor::from_vec(real_world_votes.clone(), (1, DATADIM), &dev)?
+            .to_dtype(DType::F32)?;
 
-        // let final_result = trained_model.forward(&tensor_test_votes)?;
+        let final_result = trained_model.forward(&tensor_test_votes)?;
 
-        // let result = final_result
-        //     .argmax(D::Minus1)?
-        //     .to_dtype(DType::F32)?
-        //     .get(0)
-        //     .map(|x| x.to_scalar::<f32>())??;
-        // println!("real_life_votes: {:?}", real_world_votes);
-        // println!("neural_network_prediction_result: {:?}", result);
+        let result = final_result
+            .argmax(D::Minus1)?
+            .to_dtype(DType::F32)?
+            .get(0)
+            .map(|x| x.to_scalar::<f32>())??;
+        println!("real_life_votes: {:?}", real_world_votes);
+        println!("neural_network_prediction_result: {:?}", result);
         Ok(())
     }
 }
