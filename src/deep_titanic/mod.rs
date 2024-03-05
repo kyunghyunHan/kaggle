@@ -1,19 +1,19 @@
 pub mod model {
+    use std::fs::File;
     use candle_core::{DType, Device, Result, Tensor, D};
     use candle_nn::ops::dropout;
-    use candle_nn::{loss, ops, Linear, Module, Optimizer, VarBuilder,ModuleT, VarMap,Dropout};
+    use candle_nn::{loss, ops, Dropout, Linear, Module, ModuleT, Optimizer, VarBuilder, VarMap};
     use polars::prelude::cov::pearson_corr;
     use polars::prelude::*;
     const DATADIM: usize = 7; //2차원 벡터
     const RESULTS: usize = 1; //모델이; 예측하는 개수
     const EPOCHS: usize = 500; //에폭
-    const LAYER1_OUT_SIZE: usize = 512 ; //첫번쨰 출력충의 출력뉴런 수
+    const LAYER1_OUT_SIZE: usize = 512; //첫번쨰 출력충의 출력뉴런 수
     const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
     const LAYER3_OUT_SIZE: usize = 128; //2번쨰 츨략층의  출력 뉴런 수
 
     const LEARNING_RATE: f64 = 0.001;
 
-  
     #[derive(Clone, Debug)]
     struct Dataset {
         pub train_datas: Tensor, //train data
@@ -21,19 +21,19 @@ pub mod model {
         pub test_datas: Tensor, //test data
         pub test_labels: Tensor,
     }
-   
-struct MultiLevelPerceptron {
-    ln1: Linear,
-    ln2: Linear,
-    ln3: Linear,
-}
+
+    struct MultiLevelPerceptron {
+        ln1: Linear,
+        ln2: Linear,
+        ln3: Linear,
+    }
 
     //3개 => 2개의 은닉충 1개의 출력충
     impl MultiLevelPerceptron {
         fn new(vs: VarBuilder) -> candle_core::Result<Self> {
             let ln1 = candle_nn::linear(DATADIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
             let ln2 = candle_nn::linear(LAYER1_OUT_SIZE, LAYER2_OUT_SIZE, vs.pp("ln2"))?;
-            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1,  vs.pp("ln3"))?;
+            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1, vs.pp("ln3"))?;
 
             Ok(Self { ln1, ln2, ln3 })
         }
@@ -62,7 +62,7 @@ struct MultiLevelPerceptron {
                 .unwrap()
                 .finish()
                 .unwrap();
-          
+
             println!("{}", train_df.null_count());
             println!("{}", test_df.null_count());
             println!("{}", submission_df.null_count());
@@ -392,16 +392,15 @@ struct MultiLevelPerceptron {
             for i in x_test {
                 test_buffer_images.push(i as u32)
             }
-            let test_datas =
-                Tensor::from_vec(test_buffer_images, (test_samples, 7), &Device::Cpu)?
-                    .to_dtype(DType::F32)?;
+            let test_datas = Tensor::from_vec(test_buffer_images, (test_samples, 7), &Device::Cpu)?
+                .to_dtype(DType::F32)?;
 
             let x_train = train_df
                 .drop("Survived")
                 .unwrap()
                 .to_ndarray::<Int64Type>(IndexOrder::Fortran)
                 .unwrap();
-            println!("{}",x_train.slice(ndarray::s![1,..]));
+            println!("{}", x_train.slice(ndarray::s![1, ..]));
 
             let mut train_buffer_images: Vec<u32> = Vec::with_capacity(train_samples * 7);
             for i in x_train {
@@ -410,7 +409,7 @@ struct MultiLevelPerceptron {
             let train_datas =
                 Tensor::from_vec(train_buffer_images, (train_samples, 7), &Device::Cpu)?
                     .to_dtype(DType::F32)?;
-            
+
             Ok(Self {
                 train_datas: train_datas,
                 train_labels: train_labels,
@@ -462,10 +461,10 @@ struct MultiLevelPerceptron {
     pub async fn main() -> anyhow::Result<()> {
         let dev = Device::cuda_if_available(0)?;
         let m = Dataset::new()?;
-        println!("{:?}",m.train_datas.shape());
-        println!("{:?}",m.test_datas.shape());
-        println!("{:?}",m.train_labels.shape());
-        println!("{:?}",m.test_labels.shape());
+        println!("{:?}", m.train_datas.shape());
+        println!("{:?}", m.test_datas.shape());
+        println!("{:?}", m.train_labels.shape());
+        println!("{:?}", m.test_labels.shape());
         let trained_model: MultiLevelPerceptron;
 
         loop {
@@ -482,20 +481,33 @@ struct MultiLevelPerceptron {
             }
         }
         //추정
-        let real_world_votes: Vec<u32> = vec![1, 0, 71, 1, 0, 1, 0];
+        let test = m.clone().test_datas.to_vec2::<f32>().unwrap();
+        let mut result_vec = Vec::new();
+        for i in 0..test.len() {
+            let tensor_test_votes =
+                Tensor::from_vec(test[i].clone(), (1, DATADIM), &dev)?.to_dtype(DType::F32)?;
 
-        let tensor_test_votes = Tensor::from_vec(real_world_votes.clone(), (1, DATADIM), &dev)?
-            .to_dtype(DType::F32)?;
+            let final_result = trained_model.forward(&tensor_test_votes)?;
 
-        let final_result = trained_model.forward(&tensor_test_votes)?;
+            let result = final_result
+                .argmax(D::Minus1)?
+                .to_dtype(DType::F32)?
+                .get(0)
+                .map(|x| x.to_scalar::<f32>())??;
+            println!("real_life_votes: {:?}", test[i].clone());
+            println!("neural_network_prediction_result: {:?}", result);
+            result_vec.push(result as i64);
+        }
+        //random forest 가 가장 빠르기 때문에
+        let survived_series = Series::new(
+            "Survived",
+            result_vec,
+        );
+        let passenger_id_series = Series::new("PassengerId", (892..1310).collect::<Vec<i64>>());
 
-        let result = final_result
-            .argmax(D::Minus1)?
-            .to_dtype(DType::F32)?
-            .get(0)
-            .map(|x| x.to_scalar::<f32>())??;
-        println!("real_life_votes: {:?}", real_world_votes);
-        println!("neural_network_prediction_result: {:?}", result);
+        let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
+        let mut output_file: File = File::create("./datasets/titanic/out.csv").unwrap();
+        CsvWriter::new(&mut output_file).finish(&mut df).unwrap();
         Ok(())
     }
 }
