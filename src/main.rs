@@ -1,7 +1,8 @@
 mod deep_titanic;
 mod titanic;
 mod digit_recognizer;
+mod image_classifications;
 use rayon::prelude::*;
 fn main() {
-    deep_titanic::model::main().unwrap();
+    image_classifications::model::main().unwrap();
 }
