@@ -11,7 +11,6 @@ pub mod model {
     const LAYER1_OUT_SIZE: usize = 512; //첫번쨰 출력충의 출력뉴런 수
     const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
     const LAYER3_OUT_SIZE: usize = 128; //2번쨰 츨략층의  출력 뉴런 수
-
     const LEARNING_RATE: f64 = 0.001;
 
     #[derive(Clone, Debug)]
