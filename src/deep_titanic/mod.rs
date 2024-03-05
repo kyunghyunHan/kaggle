@@ -6,7 +6,7 @@ pub mod model {
     use polars::prelude::*;
     const DATADIM: usize = 7; //2차원 벡터
     const RESULTS: usize = 1; //모델이; 예측하는 개수
-    const EPOCHS: usize = 800; //에폭
+    const EPOCHS: usize = 500; //에폭
     const LAYER1_OUT_SIZE: usize = 512 ; //첫번쨰 출력충의 출력뉴런 수
     const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
     const LAYER3_OUT_SIZE: usize = 128; //2번쨰 츨략층의  출력 뉴런 수
@@ -21,37 +21,28 @@ pub mod model {
         pub test_datas: Tensor, //test data
         pub test_labels: Tensor,
     }
-    struct MultiLevelPerceptron {
-        ln1: Linear,
-        ln2: Linear, //은닉충
-        ln3: Linear, //출력충
-        ln4: Linear, //출력충
+   
+struct MultiLevelPerceptron {
+    ln1: Linear,
+    ln2: Linear,
+    ln3: Linear,
+}
 
-        dropout:Dropout
-    }
     //3개 => 2개의 은닉충 1개의 출력충
     impl MultiLevelPerceptron {
         fn new(vs: VarBuilder) -> candle_core::Result<Self> {
             let ln1 = candle_nn::linear(DATADIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
             let ln2 = candle_nn::linear(LAYER1_OUT_SIZE, LAYER2_OUT_SIZE, vs.pp("ln2"))?;
-            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, LAYER3_OUT_SIZE , vs.pp("ln3"))?;
-            let ln4 = candle_nn::linear(LAYER3_OUT_SIZE, RESULTS + 1, vs.pp("ln4"))?;
-            let dropout = candle_nn::Dropout::new(0.5);
+            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1,  vs.pp("ln3"))?;
 
-            Ok(Self { ln1, ln2, ln3,ln4,dropout })
+            Ok(Self { ln1, ln2, ln3 })
         }
         fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
             let xs = self.ln1.forward(xs)?;
             let xs = xs.relu()?;
-            let xs= self.dropout.forward_t(&xs, true)?;
             let xs = self.ln2.forward(&xs)?;
             let xs = xs.relu()?;
-            let xs= self.dropout.forward_t(&xs, true)?;
-            let xs = self.ln3.forward(&xs)?;
-            let xs = xs.relu()?;
-            let xs= self.dropout.forward_t(&xs, true)?;
-            let xs = self.ln4.forward(&xs)?;
-            xs.silu()
+            self.ln3.forward(&xs)
         }
     }
     impl Dataset {
@@ -410,7 +401,8 @@ pub mod model {
                 .unwrap()
                 .to_ndarray::<Int64Type>(IndexOrder::Fortran)
                 .unwrap();
-            
+            println!("{}",x_train.slice(ndarray::s![1,..]));
+
             let mut train_buffer_images: Vec<u32> = Vec::with_capacity(train_samples * 7);
             for i in x_train {
                 train_buffer_images.push(i as u32)
@@ -418,7 +410,7 @@ pub mod model {
             let train_datas =
                 Tensor::from_vec(train_buffer_images, (train_samples, 7), &Device::Cpu)?
                     .to_dtype(DType::F32)?;
-              
+            
             Ok(Self {
                 train_datas: train_datas,
                 train_labels: train_labels,
@@ -456,11 +448,11 @@ pub mod model {
                 loss.to_scalar::<f32>()?,
                 final_accuracy
             );
-            if final_accuracy > 100.0 {
+            if final_accuracy > 90.0 {
                 break;
             }
         }
-        if final_accuracy < 100.0 {
+        if final_accuracy < 89.0 {
             Err(anyhow::Error::msg("The model is not trained well enough."))
         } else {
             Ok(model)
@@ -490,7 +482,7 @@ pub mod model {
             }
         }
         //추정
-        let real_world_votes: Vec<u32> = vec![13, 22];
+        let real_world_votes: Vec<u32> = vec![1, 0, 71, 1, 0, 1, 0];
 
         let tensor_test_votes = Tensor::from_vec(real_world_votes.clone(), (1, DATADIM), &dev)?
             .to_dtype(DType::F32)?;
