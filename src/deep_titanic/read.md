@@ -1,7 +1,7 @@
 # 타이타닉
 
 ## Dataset
- - [data](https://www.kaggle.com/competitions/titanic/data)
+ - [Dataset](https://www.kaggle.com/competitions/titanic/data)
 
 ## 데이터 불러오기
 
