@@ -12,7 +12,7 @@ pub mod model {
     const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
     const LAYER3_OUT_SIZE: usize = 128; //2번쨰 츨략층의  출력 뉴런 수
     const LEARNING_RATE: f64 = 0.001;
-
+    /*데이터 불러오기 */
     #[derive(Clone, Debug)]
     struct Dataset {
         pub train_datas: Tensor, //train data
@@ -20,35 +20,12 @@ pub mod model {
         pub test_datas: Tensor, //test data
         pub test_labels: Tensor,
     }
-
-    struct MultiLevelPerceptron {
-        ln1: Linear,
-        ln2: Linear,
-        ln3: Linear,
-    }
-
-    //3개 => 2개의 은닉충 1개의 출력충
-    impl MultiLevelPerceptron {
-        fn new(vs: VarBuilder) -> candle_core::Result<Self> {
-            let ln1 = candle_nn::linear(DATADIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
-            let ln2 = candle_nn::linear(LAYER1_OUT_SIZE, LAYER2_OUT_SIZE, vs.pp("ln2"))?;
-            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1, vs.pp("ln3"))?;
-
-            Ok(Self { ln1, ln2, ln3 })
-        }
-        fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
-            let xs = self.ln1.forward(xs)?;
-            let xs = xs.relu()?;
-            let xs = self.ln2.forward(&xs)?;
-            let xs = xs.relu()?;
-            self.ln3.forward(&xs)
-        }
-    }
     impl Dataset {
         fn new() -> Result<Dataset> {
-            let train_samples = 891;
-            let test_samples = 418;
+            let train_samples = 891;//데이터 행의 개수
+            let test_samples = 418;//테스트 데이터 행의 개수
             //데이터 불러오기
+
             let train_df = CsvReader::from_path("./datasets/titanic/train.csv")
                 .unwrap()
                 .finish()
@@ -79,7 +56,7 @@ pub mod model {
                 ])
                 .collect()
                 .unwrap()
-                .drop_many(&["Cabin"]);
+                .drop(&"Cabin").unwrap();
             let test_df: DataFrame = test_df
                 .clone()
                 .lazy()
@@ -417,6 +394,30 @@ pub mod model {
             })
         }
     }
+    struct MultiLevelPerceptron {
+        ln1: Linear,
+        ln2: Linear,
+        ln3: Linear,
+    }
+
+    //3개 => 2개의 은닉충 1개의 출력충
+    impl MultiLevelPerceptron {
+        fn new(vs: VarBuilder) -> candle_core::Result<Self> {
+            let ln1 = candle_nn::linear(DATADIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
+            let ln2 = candle_nn::linear(LAYER1_OUT_SIZE, LAYER2_OUT_SIZE, vs.pp("ln2"))?;
+            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1, vs.pp("ln3"))?;
+
+            Ok(Self { ln1, ln2, ln3 })
+        }
+        fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
+            let xs = self.ln1.forward(xs)?;
+            let xs = xs.relu()?;
+            let xs = self.ln2.forward(&xs)?;
+            let xs = xs.relu()?;
+            self.ln3.forward(&xs)
+        }
+    }
+   
     fn train(m: Dataset, dev: &Device) -> anyhow::Result<MultiLevelPerceptron> {
         let train_results = m.train_labels.to_device(dev)?; //디바이스
         let train_votes = m.train_datas.to_device(dev)?;
