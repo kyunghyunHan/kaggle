@@ -1,5 +1,7 @@
 pub mod model {
 
+    use std::any::TypeId;
+
     use candle_core::{Result as CRS, Tensor};
     use polars::prelude::cov::{cov, pearson_corr as pc};
     use polars::prelude::*;
@@ -32,6 +34,8 @@ pub mod model {
             println!("null확인:{:?}", submission_df.null_count());
 
             //test와 train의 id 삭제
+
+            corr_fn(&train_df,train_df.schema())
 
             //상관관계를 확인
 
@@ -228,19 +232,40 @@ pub mod model {
             Ok(())
         }
     }
-
-    fn corr_fn(train_df: &DataFrame, list: Vec<&str>, target: &str, num: f64)->Vec<String> {
+    /*0.2이상만 출력하는 함수 */
+    
+    fn corr_fn(train_df: &DataFrame, list:Schema, target: &str,tp:TypeId)->Vec<String> {
+        /*
+        list:
+        target
+  
+         */
+        if tp == TypeId::of::<u32>(){
+          
+        }else if tp== TypeId::of::<u32>(){
+          
+        }else if tp== TypeId::of::<u32>(){
+          
+        }else if tp== TypeId::of::<u32>(){
+          
+        }else if tp== TypeId::of::<u32>(){
+          
+        }else if tp== TypeId::of::<u32>(){
+          
+        }
         let mut v: Vec<String> = Vec::new();
-        for i in 0..list.len() {
+        
+        for i in list{
+            
             if pc(
-                train_df.column(list[i]).unwrap().i64().unwrap(),
-                train_df.column("smoking").unwrap().i64().unwrap(),
+                train_df.column(&i.0).unwrap().i64().unwrap(),
+                train_df.column(target).unwrap().i64().unwrap(),
                 1,
             )
             .unwrap()
                 > 0.2
             {
-                v.push(list[i].to_string())
+                v.push(i.0.to_string())
             }
         }
         v
