@@ -1,7 +1,6 @@
 pub mod model {
     use std::fs::File;
     use candle_core::{DType, Device, Result, Tensor, D};
-    use candle_nn::ops::dropout;
     use candle_nn::{loss, ops, Dropout, Linear, Module, ModuleT, Optimizer, VarBuilder, VarMap};
     use polars::prelude::cov::pearson_corr;
     use polars::prelude::*;
@@ -10,7 +9,6 @@ pub mod model {
     const EPOCHS: usize = 500; //에폭
     const LAYER1_OUT_SIZE: usize = 512; //첫번쨰 출력충의 출력뉴런 수
     const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
-    const LAYER3_OUT_SIZE: usize = 128; //2번쨰 츨략층의  출력 뉴런 수
     const LEARNING_RATE: f64 = 0.001;
     /*데이터 불러오기 */
     #[derive(Clone, Debug)]
