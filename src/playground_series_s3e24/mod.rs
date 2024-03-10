@@ -34,9 +34,11 @@ pub mod model {
             println!("null확인:{:?}", submission_df.null_count());
 
             //test와 train의 id 삭제
-
-            corr_fn(&train_df,train_df.schema())
-
+            corr_fn(&train_df,train_df.schema(),"smoking",TypeId::of::<i64>());
+            println!("{:?}",            corr_fn(&train_df,train_df.schema(),"smoking",TypeId::of::<i64>())        );
+            for i in train_df.schema(){
+                 println!("{}",i.1);
+            }
             //상관관계를 확인
 
             let age_corr = pc(
@@ -240,33 +242,46 @@ pub mod model {
         target
   
          */
-        if tp == TypeId::of::<u32>(){
-          
-        }else if tp== TypeId::of::<u32>(){
-          
-        }else if tp== TypeId::of::<u32>(){
-          
-        }else if tp== TypeId::of::<u32>(){
-          
-        }else if tp== TypeId::of::<u32>(){
-          
-        }else if tp== TypeId::of::<u32>(){
-          
-        }
+    
         let mut v: Vec<String> = Vec::new();
         
         for i in list{
-            
-            if pc(
-                train_df.column(&i.0).unwrap().i64().unwrap(),
-                train_df.column(target).unwrap().i64().unwrap(),
-                1,
-            )
-            .unwrap()
-                > 0.2
-            {
-                v.push(i.0.to_string())
+            if tp == TypeId::of::<i64>(){
+                if pc(
+                    train_df.column(&i.0).unwrap().cast(&DataType::Int64).unwrap().i64().unwrap(),
+                    train_df.column(target).unwrap().i64().unwrap(),
+                    1,
+                )
+                .unwrap()
+                    > 0.2
+                {
+                    v.push(i.0.to_string())
+                }
+            }else if tp== TypeId::of::<f64>(){
+                if pc(
+                    train_df.column(&i.0).unwrap().cast(&DataType::Float64).unwrap().f64().unwrap(),
+                    train_df.column(target).unwrap().f64().unwrap(),
+                    1,
+                )
+                .unwrap()
+                    > 0.2
+                {
+                    v.push(i.0.to_string())
+                }
+            }else if tp== TypeId::of::<u64>(){
+                if pc(
+                    train_df.column(&i.0).unwrap().cast(&DataType::UInt64).unwrap().u64().unwrap(),
+                    train_df.column(target).unwrap().u64().unwrap(),
+                    1,
+                )
+                .unwrap()
+                    > 0.2
+                {
+                    v.push(i.0.to_string())
+                }
             }
+          
+           
         }
         v
     }
