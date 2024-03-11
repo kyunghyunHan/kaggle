@@ -6,7 +6,7 @@ pub mod model {
     use polars::prelude::*;
     use std::fs::File;
     const DATADIM: usize = 9; //2차원 벡터
-    const RESULTS: usize = 0; //모델이; 예측하는 개수
+    const RESULTS: usize = 1; //모델이; 예측하는 개수
     const EPOCHS: usize = 10; //에폭
     const LAYER1_OUT_SIZE: usize = 64; //첫번쨰 출력충의 출력뉴런 수
     const LAYER2_OUT_SIZE: usize = 32; //2번쨰 츨략층의  출력 뉴런 수
@@ -33,10 +33,9 @@ pub mod model {
                     .unwrap()
                     .finish()
                     .unwrap();
+           
 
-            let train_samples = train_df.shape().0;
-
-            println!("{}", train_samples);
+        
             println!("데이터 미리보기:{}", train_df.head(None));
             println!("데이터 정보 확인:{:?}", train_df.schema());
             println!("null확인:{:?}", train_df.null_count());
@@ -86,7 +85,6 @@ pub mod model {
             )?
             .to_dtype(DType::F32)?;
 
-            let train_df = train_df.select(&corr_vec).unwrap();
 
             let x_train = train_df
                 .to_ndarray::<Float64Type>(IndexOrder::Fortran)
@@ -161,25 +159,16 @@ pub mod model {
     }
     struct MultiLevelPerceptron {
         ln1: Linear,
-        ln2: Linear,
-        ln3: Linear,
     }
 
     //3개 => 2개의 은닉충 1개의 출력충
     impl MultiLevelPerceptron {
         fn new(vs: VarBuilder) -> candle_core::Result<Self> {
-            let ln1 = candle_nn::linear(DATADIM, LAYER1_OUT_SIZE, vs.pp("ln1"))?;
-            let ln2 = candle_nn::linear(LAYER1_OUT_SIZE, LAYER2_OUT_SIZE, vs.pp("ln2"))?;
-            let ln3 = candle_nn::linear(LAYER2_OUT_SIZE, RESULTS + 1, vs.pp("ln3"))?;
-
-            Ok(Self { ln1, ln2, ln3 })
+            let ln1 = candle_nn::linear(DATADIM, 1, vs.pp("ln1"))?;
+            Ok(Self { ln1,})
         }
         fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
-            let xs = self.ln1.forward(xs)?;
-            let xs = xs.relu()?;
-            let xs = self.ln2.forward(&xs)?;
-            let xs = xs.silu()?;
-            self.ln3.forward(&xs)
+            self.ln1.forward(xs)
         }
     }
 
@@ -195,9 +184,8 @@ pub mod model {
         let mut final_loss: f32 = 0.;
         for epoch in 1..EPOCHS + 1 {
             let logits = model.forward(&train_votes)?;
-            let predictions = ops::sigmoid(&logits)?; // 회귀에서는 활성화 함수가 필요하지 않음
-    
-            let loss = loss::mse(&predictions, &train_results)?; // 평균 제곱 오차 손실 함수
+
+            let loss = loss::mse(&logits, &train_results)?; // 평균 제곱 오차 손실 함수
             sgd.backward_step(&loss)?;
     
             final_loss = loss.to_scalar::<f32>()?;
@@ -258,7 +246,7 @@ pub mod model {
             "smoking",
             result_vec,
         );
-        let passenger_id_series = Series::new("PassengerId", (159256..=265426).collect::<Vec<i64>>());
+        let passenger_id_series = Series::new("id", (159256..=265426).collect::<Vec<i64>>());
 
         let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
         let mut output_file: File = File::create("./datasets/playground-series-s3e24/out.csv").unwrap();
