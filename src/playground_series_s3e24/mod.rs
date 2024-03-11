@@ -1,20 +1,16 @@
 pub mod model {
-
     use std::any::TypeId;
-
     use candle_core::{DType, Device, Result as CRS, Tensor,D};
     use candle_nn::{loss, ops, Dropout, Linear, Module, ModuleT, Optimizer, VarBuilder, VarMap};
-
     use polars::prelude::cov::{cov, pearson_corr as pc};
     use polars::prelude::*;
-    use polars_lazy::dsl::{col, pearson_corr};
     use std::fs::File;
     const DATADIM: usize = 9; //2차원 벡터
     const RESULTS: usize = 0; //모델이; 예측하는 개수
-    const EPOCHS: usize = 500; //에폭
-    const LAYER1_OUT_SIZE: usize = 512; //첫번쨰 출력충의 출력뉴런 수
-    const LAYER2_OUT_SIZE: usize = 256; //2번쨰 츨략층의  출력 뉴런 수
-    const LEARNING_RATE: f64 = 0.001;
+    const EPOCHS: usize = 10; //에폭
+    const LAYER1_OUT_SIZE: usize = 64; //첫번쨰 출력충의 출력뉴런 수
+    const LAYER2_OUT_SIZE: usize = 32; //2번쨰 츨략층의  출력 뉴런 수
+    const LEARNING_RATE: f64 = 0.01;
     #[derive(Debug,Clone)]
     struct Dataset {
         x_train: Tensor,
@@ -182,51 +178,38 @@ pub mod model {
             let xs = self.ln1.forward(xs)?;
             let xs = xs.relu()?;
             let xs = self.ln2.forward(&xs)?;
-            let xs = xs.relu()?;
+            let xs = xs.silu()?;
             self.ln3.forward(&xs)
         }
     }
 
     fn train(m: Dataset, dev: &Device) -> anyhow::Result<MultiLevelPerceptron> {
         let train_results = m.y_train.to_device(dev)?.unsqueeze(1)?;
-        println!("{:?}",train_results.shape());
+
         let train_votes = m.x_train.to_device(dev)?;
-        let varmap = VarMap::new(); //VarMap은 변수들을 관리하는 데 사용되는 자료 구조
+        let varmap = VarMap::new();
         let vs = VarBuilder::from_varmap(&varmap, DType::F32, dev);
         let model = MultiLevelPerceptron::new(vs.clone())?;
         let mut sgd = candle_nn::SGD::new(varmap.all_vars(), LEARNING_RATE)?;
-        let test_votes = m.x_test.to_device(dev)?;
-        let test_results = m.y_test.to_device(dev)?;
-        let mut final_accuracy: f32 = 0.;
+    
+        let mut final_loss: f32 = 0.;
         for epoch in 1..EPOCHS + 1 {
             let logits = model.forward(&train_votes)?;
-            let log_sm = ops::sigmoid(&logits)?; //Minus1:가장 마지막 축
-            println!("{:?}",log_sm.shape());
-            let loss = loss::binary_cross_entropy_with_logit(&log_sm, &train_results)?; //손실함수
-            sgd.backward_step(&loss)?; //역전파
-            let test_logits = model.forward(&test_votes)?;
-            let sum_ok = test_logits
-                .argmax(D::Minus1)?
-                .eq(&test_results)?
-                .to_dtype(DType::F32)?
-                .sum_all()?
-                .to_scalar::<f32>()?; //정확도 계산
-            let test_accuracy = sum_ok / test_results.dims1()? as f32;
-            final_accuracy = 100. * test_accuracy;
-            println!(
-                "Epoch: {epoch:3} Train loss: {:8.5} Test accuracy: {:5.2}%",
-                loss.to_scalar::<f32>()?,
-                final_accuracy
-            );
-            if final_accuracy > 90.0 {
+            let predictions = ops::sigmoid(&logits)?; // 회귀에서는 활성화 함수가 필요하지 않음
+    
+            let loss = loss::mse(&predictions, &train_results)?; // 평균 제곱 오차 손실 함수
+            sgd.backward_step(&loss)?;
+    
+            final_loss = loss.to_scalar::<f32>()?;
+            println!("Epoch: {epoch:3} Train loss: {:8.5}", final_loss);
+    
+            if final_loss < 0.001 {
+                // 손실이 일정 수준 이하로 감소하면 학습 종료
                 break;
             }
         }
-        if final_accuracy < 89.0 {
-            Err(anyhow::Error::msg("The model is not trained well enough."))
-        } else {
-            Ok(model)
-        }
+    
+        Ok(model)
     }
     #[tokio::main]
     pub  async  fn main() -> anyhow::Result<()> {
@@ -268,17 +251,17 @@ pub mod model {
                 .map(|x| x.to_scalar::<f32>())??;
             println!("real_life_votes: {:?}", test[i].clone());
             println!("neural_network_prediction_result: {:?}", result);
-            result_vec.push(result as i64);
+            result_vec.push(result );
         }
         //random forest 가 가장 빠르기 때문에
         let survived_series = Series::new(
-            "Survived",
+            "smoking",
             result_vec,
         );
-        let passenger_id_series = Series::new("PassengerId", (159256..265426).collect::<Vec<i64>>());
+        let passenger_id_series = Series::new("PassengerId", (159256..=265426).collect::<Vec<i64>>());
 
         let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
-        let mut output_file: File = File::create("./datasets/titanic/out.csv").unwrap();
+        let mut output_file: File = File::create("./datasets/playground-series-s3e24/out.csv").unwrap();
         CsvWriter::new(&mut output_file).finish(&mut df).unwrap();
         Ok(())
     }
