@@ -8,4 +8,6 @@
 - [DigitReconizer](src/digit_recognizer/read.md)
 - [Binary Prediction of Smoker Status using Bio-Signals](src/playground_series_s3e24/read.md)
 - [Image Classifications](src/image_classifications/read.md)
+- [Binary Classification with a Bank Churn Dataset]()
 
+binary_classification_with_a_bank_churn_dataset
