@@ -1,17 +1,15 @@
 pub mod model {
-    use std::any::TypeId;
-    use candle_core::{DType, Device, Result as CRS, Tensor,D};
+    use candle_core::{DType, Device, IndexOp, Result as CRS, Tensor, D};
     use candle_nn::{loss, ops, Dropout, Linear, Module, ModuleT, Optimizer, VarBuilder, VarMap};
     use polars::prelude::cov::{cov, pearson_corr as pc};
     use polars::prelude::*;
+    use std::any::TypeId;
     use std::fs::File;
     const DATADIM: usize = 9; //2차원 벡터
     const RESULTS: usize = 1; //모델이; 예측하는 개수
-    const EPOCHS: usize = 10; //에폭
-    const LAYER1_OUT_SIZE: usize = 64; //첫번쨰 출력충의 출력뉴런 수
-    const LAYER2_OUT_SIZE: usize = 32; //2번쨰 츨략층의  출력 뉴런 수
-    const LEARNING_RATE: f64 = 0.01;
-    #[derive(Debug,Clone)]
+    const EPOCHS: usize = 10000; //에폭
+    const LEARNING_RATE: f64 = 1e-5;
+    #[derive(Debug, Clone)]
     struct Dataset {
         x_train: Tensor,
         y_train: Tensor,
@@ -33,9 +31,7 @@ pub mod model {
                     .unwrap()
                     .finish()
                     .unwrap();
-           
 
-        
             println!("데이터 미리보기:{}", train_df.head(None));
             println!("데이터 정보 확인:{:?}", train_df.schema());
             println!("null확인:{:?}", train_df.null_count());
@@ -85,7 +81,6 @@ pub mod model {
             )?
             .to_dtype(DType::F32)?;
 
-
             let x_train = train_df
                 .to_ndarray::<Float64Type>(IndexOrder::Fortran)
                 .unwrap();
@@ -100,9 +95,11 @@ pub mod model {
                 &Device::Cpu,
             )?
             .to_dtype(DType::F32)?;
-            let train_labels = Tensor::from_vec(labels, train_df.shape().0, &Device::Cpu)?.to_dtype(DType::F32)?;
+            let train_labels =
+                Tensor::from_vec(labels, train_df.shape().0, &Device::Cpu)?.to_dtype(DType::F32)?;
 
-            let test_labels = Tensor::from_vec(test_labels, (test_df.shape().0,), &Device::Cpu)?.to_dtype(DType::F32)?;
+            let test_labels = Tensor::from_vec(test_labels, (test_df.shape().0,), &Device::Cpu)?
+                .to_dtype(DType::F32)?;
             Ok(Self {
                 x_train: train_datas,
                 y_train: train_labels,
@@ -164,8 +161,8 @@ pub mod model {
     //3개 => 2개의 은닉충 1개의 출력충
     impl MultiLevelPerceptron {
         fn new(vs: VarBuilder) -> candle_core::Result<Self> {
-            let ln1 = candle_nn::linear(DATADIM, 1, vs.pp("ln1"))?;
-            Ok(Self { ln1,})
+            let ln1 = candle_nn::linear(DATADIM, RESULTS, vs.pp("ln1"))?;
+            Ok(Self { ln1 })
         }
         fn forward(&self, xs: &Tensor) -> candle_core::Result<Tensor> {
             self.ln1.forward(xs)
@@ -180,27 +177,27 @@ pub mod model {
         let vs = VarBuilder::from_varmap(&varmap, DType::F32, dev);
         let model = MultiLevelPerceptron::new(vs.clone())?;
         let mut sgd = candle_nn::SGD::new(varmap.all_vars(), LEARNING_RATE)?;
-    
+
         let mut final_loss: f32 = 0.;
-        for epoch in 1..EPOCHS + 1 {
+        for epoch in 0..EPOCHS + 1 {
+            
             let logits = model.forward(&train_votes)?;
 
             let loss = loss::mse(&logits, &train_results)?; // 평균 제곱 오차 손실 함수
             sgd.backward_step(&loss)?;
-    
+
             final_loss = loss.to_scalar::<f32>()?;
             println!("Epoch: {epoch:3} Train loss: {:8.5}", final_loss);
-    
             if final_loss < 0.001 {
                 // 손실이 일정 수준 이하로 감소하면 학습 종료
                 break;
             }
         }
-    
+
         Ok(model)
     }
     #[tokio::main]
-    pub  async  fn main() -> anyhow::Result<()> {
+    pub async fn main() -> anyhow::Result<()> {
         let dev = Device::cuda_if_available(0)?;
         let m = Dataset::new()?;
         println!("{:?}", m);
@@ -229,27 +226,16 @@ pub mod model {
         for i in 0..test.len() {
             let tensor_test_votes =
                 Tensor::from_vec(test[i].clone(), (1, DATADIM), &dev)?.to_dtype(DType::F32)?;
-
-            let final_result = trained_model.forward(&tensor_test_votes)?;
-
-            let result = final_result
-                .argmax(D::Minus1)?
-                .to_dtype(DType::F32)?
-                .get(0)
-                .map(|x| x.to_scalar::<f32>())??;
-            println!("real_life_votes: {:?}", test[i].clone());
-            println!("neural_network_prediction_result: {:?}", result);
-            result_vec.push(result );
+            let final_result = trained_model.forward(&tensor_test_votes)?.i((0,0))?.to_scalar::<f32>()?;
+            result_vec.push(final_result);
         }
         //random forest 가 가장 빠르기 때문에
-        let survived_series = Series::new(
-            "smoking",
-            result_vec,
-        );
+        let survived_series = Series::new("smoking", result_vec);
         let passenger_id_series = Series::new("id", (159256..=265426).collect::<Vec<i64>>());
 
         let mut df: DataFrame = DataFrame::new(vec![passenger_id_series, survived_series]).unwrap();
-        let mut output_file: File = File::create("./datasets/playground-series-s3e24/out.csv").unwrap();
+        let mut output_file: File =
+            File::create("./datasets/playground-series-s3e24/out.csv").unwrap();
         CsvWriter::new(&mut output_file).finish(&mut df).unwrap();
         Ok(())
     }
